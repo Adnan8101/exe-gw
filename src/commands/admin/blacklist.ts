@@ -2,6 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Permiss
 import { PrismaClient } from '@prisma/client';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { tracker } from '../../services/Tracker';
 
 const prisma = new PrismaClient();
 
@@ -79,16 +80,31 @@ export default {
         const action = args[0]?.toLowerCase();
         if (!action || !['add', 'remove', 'show'].includes(action)) {
             const embed = new EmbedBuilder()
-                .setDescription(`${Emojis.CROSS} **Invalid Usage**\n\`\`\`!blacklist <add|remove|show> <message|voice> [#channel]\`\`\``)
+                .setDescription(`${Emojis.CROSS} **Invalid Usage**\n\`\`\`!blacklist <add|remove|show> <message|voice> [#channel/ID/name]\`\`\``)
                 .setColor(Theme.ErrorColor)
                 .setTimestamp();
             return message.channel.send({ embeds: [embed] });
         }
 
-        await this.run(message, action, args[1], message.mentions.channels.first());
+        // Get channel from mention, ID, or name
+        let channel = message.mentions.channels.first();
+        if (!channel && args[2]) {
+            // Try to get by ID
+            channel = message.guild.channels.cache.get(args[2]);
+            
+            // If not found, try by name (case insensitive)
+            if (!channel) {
+                const channelName = args.slice(2).join(' ').toLowerCase();
+                channel = message.guild.channels.cache.find((ch: any) => 
+                    ch.name.toLowerCase() === channelName
+                );
+            }
+        }
+
+        await this.run(message, action, args[1], channel, args[2]);
     },
 
-    async run(ctx: any, action?: string, typeArg?: string, channelArg?: any) {
+    async run(ctx: any, action?: string, typeArg?: string, channelArg?: any, channelInput?: string) {
         const guildId = ctx.guildId!;
         const isInteraction = !!ctx.options;
 
@@ -110,10 +126,25 @@ export default {
                     return ctx.channel.send({ embeds: [embed] });
                 }
 
-                const channel = channelArg;
+                let channel = channelArg;
+                
+                // If no channel found and we have input, try to find it
+                if (!channel && channelInput && !isInteraction) {
+                    // Try by ID
+                    channel = ctx.guild.channels.cache.get(channelInput);
+                    
+                    // Try by name
+                    if (!channel) {
+                        const channelName = channelInput.toLowerCase();
+                        channel = ctx.guild.channels.cache.find((ch: any) => 
+                            ch.name.toLowerCase() === channelName
+                        );
+                    }
+                }
+                
                 if (!channel) {
                     const embed = new EmbedBuilder()
-                        .setDescription(`${Emojis.CROSS} Please mention a channel to blacklist.`)
+                        .setDescription(`${Emojis.CROSS} Channel not found. Please provide a valid channel mention, ID, or name.`)
                         .setColor(Theme.ErrorColor)
                         .setTimestamp();
                     if (isInteraction) return ctx.reply({ embeds: [embed], ephemeral: true });
@@ -167,12 +198,15 @@ export default {
                     }
                 });
 
-                const embed = new EmbedBuilder()
+                // Refresh blacklist cache immediately
+                await tracker.forceRefreshBlacklist();
+
+                const successEmbed = new EmbedBuilder()
                     .setDescription(`${Emojis.TICK} Successfully blacklisted ${channel} for **${type}** tracking.`)
                     .setColor(Theme.SuccessColor)
                     .setTimestamp();
-                if (isInteraction) return ctx.reply({ embeds: [embed] });
-                return ctx.channel.send({ embeds: [embed] });
+                if (isInteraction) return ctx.reply({ embeds: [successEmbed] });
+                return ctx.channel.send({ embeds: [successEmbed] });
 
             } else if (action === 'remove') {
                 const type = typeArg?.toLowerCase();
@@ -185,29 +219,44 @@ export default {
                     return ctx.channel.send({ embeds: [embed] });
                 }
 
-                const channel = channelArg;
-                if (!channel) {
+                let channel2 = channelArg;
+                
+                // If no channel found and we have input, try to find it
+                if (!channel2 && channelInput && !isInteraction) {
+                    // Try by ID
+                    channel2 = ctx.guild.channels.cache.get(channelInput);
+                    
+                    // Try by name
+                    if (!channel2) {
+                        const channelName = channelInput.toLowerCase();
+                        channel2 = ctx.guild.channels.cache.find((ch: any) => 
+                            ch.name.toLowerCase() === channelName
+                        );
+                    }
+                }
+                
+                if (!channel2) {
                     const embed = new EmbedBuilder()
-                        .setDescription(`${Emojis.CROSS} Please mention a channel to remove from blacklist.`)
+                        .setDescription(`${Emojis.CROSS} Channel not found. Please provide a valid channel mention, ID, or name.`)
                         .setColor(Theme.ErrorColor)
                         .setTimestamp();
                     if (isInteraction) return ctx.reply({ embeds: [embed], ephemeral: true });
                     return ctx.channel.send({ embeds: [embed] });
                 }
 
-                const existing = await (prisma as any).blacklistChannel?.findUnique({
+                const existing2 = await (prisma as any).blacklistChannel?.findUnique({
                     where: {
                         guildId_channelId_type: {
                             guildId: guildId,
-                            channelId: channel.id,
+                            channelId: channel2.id,
                             type: type
                         }
                     }
                 });
 
-                if (!existing) {
+                if (!existing2) {
                     const embed = new EmbedBuilder()
-                        .setDescription(`${Emojis.CROSS} ${channel} is not blacklisted for **${type}** tracking.`)
+                        .setDescription(`${Emojis.CROSS} ${channel2} is not blacklisted for **${type}** tracking.`)
                         .setColor(Theme.ErrorColor)
                         .setTimestamp();
                     if (isInteraction) return ctx.reply({ embeds: [embed], ephemeral: true });
@@ -218,18 +267,21 @@ export default {
                     where: {
                         guildId_channelId_type: {
                             guildId: guildId,
-                            channelId: channel.id,
+                            channelId: channel2.id,
                             type: type
                         }
                     }
                 });
 
-                const embed = new EmbedBuilder()
-                    .setDescription(`${Emojis.TICK} Successfully removed ${channel} from **${type}** blacklist.`)
+                // Refresh blacklist cache immediately
+                await tracker.forceRefreshBlacklist();
+
+                const removeEmbed = new EmbedBuilder()
+                    .setDescription(`${Emojis.TICK} Successfully removed ${channel2} from **${type}** blacklist.`)
                     .setColor(Theme.SuccessColor)
                     .setTimestamp();
-                if (isInteraction) return ctx.reply({ embeds: [embed] });
-                return ctx.channel.send({ embeds: [embed] });
+                if (isInteraction) return ctx.reply({ embeds: [removeEmbed] });
+                return ctx.channel.send({ embeds: [removeEmbed] });
 
             } else if (action === 'show') {
                 const type = typeArg?.toLowerCase() || 'all';

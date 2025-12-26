@@ -36,6 +36,11 @@ class Tracker {
         }
     }
 
+    // Public method to refresh blacklist immediately after changes
+    public async forceRefreshBlacklist() {
+        await this.refreshBlacklistCache();
+    }
+
     private isChannelBlacklisted(guildId: string, channelId: string, type: 'message' | 'voice'): boolean {
         const key = `${guildId}_${type}`;
         return this.blacklistCache.get(key)?.has(channelId) || false;
