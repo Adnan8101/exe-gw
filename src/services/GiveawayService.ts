@@ -19,7 +19,7 @@ export class GiveawayService {
         const embed = createGiveawayEmbed(gForEmbed, 0);
 
         const message = await channel.send({ embeds: [embed] });
-        await message.react(giveawayData.emoji || "🎉");
+        await message.react(giveawayData.emoji || "<a:Exe_Gw:1454033571273506929>");
 
         await prisma.giveaway.create({
             data: {

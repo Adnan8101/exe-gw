@@ -18,7 +18,7 @@ export default {
 
 function createHelpEmbed() {
     return new EmbedBuilder()
-        .setTitle('📚 Giveaway Commands')
+        .setTitle('Giveaway Commands')
         .setColor(Theme.EmbedColor)
         .setDescription('All commands require **Manage Server** permission.')
         .addFields(
@@ -29,6 +29,8 @@ function createHelpEmbed() {
             { name: '/gdelete <message_id>', value: 'Delete a giveaway completely.' },
             { name: '/glist', value: 'List all running giveaways.' },
             { name: '/ghistory', value: 'View complete giveaway history with pagination and Excel export.' },
+            { name: '/messages [user]', value: 'Check message count (alias: m).' },
+            { name: '/invites [user]', value: 'Check invite count (alias: i).' },
             { name: '/gping', value: 'Check the bot\'s WebSocket ping.' },
             { name: '/gstats', value: 'View detailed bot statistics.' },
             { name: '/ginvite', value: 'Get the bot invite link.' },

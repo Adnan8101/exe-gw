@@ -110,7 +110,7 @@ export default {
         const assignRole = interaction.options.getRole('assign_role');
         const customMessage = interaction.options.getString('custom_message');
         const thumbnail = interaction.options.getString('thumbnail');
-        const emoji = interaction.options.getString('custom_emoji') || "🎉";
+        const emoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
         const birthdayUser = interaction.options.getUser('birthday_user');
 
         await this.run(interaction, channel, timeStr, timezone, winners, prize, durationStr, {
@@ -180,7 +180,7 @@ export default {
             assignRole: opts.assignRole || null,
             customMessage: opts.customMessage || null,
             thumbnail: opts.thumbnail || null,
-            emoji: opts.emoji || "🎉",
+            emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
             birthdayUser: opts.birthdayUser || null
         };
 

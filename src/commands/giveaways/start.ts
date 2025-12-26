@@ -103,7 +103,7 @@ export default {
             winnersCount: winners,
             endTime: toBigInt(endTimeMs), // Use centralized time utility with UTC
             createdAt: toBigInt(Date.now()),
-            emoji: "🎉"
+            emoji: "<a:Exe_Gw:1454033571273506929>"
         };
 
         try {
@@ -114,7 +114,7 @@ export default {
             const embed = createGiveawayEmbed(gForEmbed, 0);
 
             const message = await channel.send({ embeds: [embed] });
-            await message.react("🎉");
+            await message.react("<a:Exe_Gw:1454033571273506929>");
 
             await prisma.giveaway.create({
                 data: {

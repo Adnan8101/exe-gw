@@ -134,8 +134,15 @@ client.on('messageCreate', async (message) => {
 
     if (!commandName) return;
 
-    // Check direct command name or alias (if we had them)
-    const command = commands.get(commandName);
+    // Map aliases to command names
+    const aliasMap: { [key: string]: string } = {
+        'm': 'messages',
+        'i': 'invites'
+    };
+
+    // Check direct command name or alias
+    const actualCommandName = aliasMap[commandName] || commandName;
+    const command = commands.get(actualCommandName);
 
     if (!command) return;
 

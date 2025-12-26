@@ -68,7 +68,7 @@ export default {
                 .setDescription('URL for giveaway thumbnail'))
         .addStringOption(option =>
             option.setName('custom_emoji')
-                .setDescription('Custom emoji for giveaway reaction (default: 🎉)')),
+                .setDescription('Custom emoji for giveaway reaction (default: <a:Exe_Gw:1454033571273506929>)')),
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (!await hasGiveawayPermissions(interaction)) {
@@ -114,7 +114,7 @@ export default {
         const assignRole = interaction.options.getRole('assign_role');
         const winnerRole = interaction.options.getRole('winner_role');
         const thumbnail = interaction.options.getString('thumbnail');
-        const customEmoji = interaction.options.getString('custom_emoji') || "🎉";
+        const customEmoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
 
         const giveawayData = {
             channelId: channel.id,
