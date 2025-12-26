@@ -109,7 +109,6 @@ export class SchedulerService {
             const endedGiveaways = await prisma.giveaway.findMany({
                 where: {
                     ended: false,
-                    paused: false, // Skip paused giveaways
                     endTime: {
                         lte: nowUTC
                     }

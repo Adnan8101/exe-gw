@@ -53,9 +53,11 @@ export default {
             await prisma.giveaway.update({
                 where: { messageId },
                 data: {
-                    paused: true,
-                    pausedAt: BigInt(Date.now())
-                }
+                    ...(giveaway.hasOwnProperty('paused') ? {
+                        paused: true,
+                        pausedAt: BigInt(Date.now())
+                    } : {})
+                } as any,
             });
 
             await interaction.reply({

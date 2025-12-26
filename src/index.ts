@@ -115,11 +115,13 @@ client.on('messageCreate', async (message) => {
     // Check if user is in no-prefix list
     let isNoPrefixUser = false;
     try {
-        const noPrefixUser = await prisma.noPrefixUser.findUnique({
+        const noPrefixUser = await (prisma as any).noPrefixUser?.findUnique({
             where: { userId: message.author.id }
         });
         isNoPrefixUser = !!noPrefixUser;
-    } catch (e) { }
+    } catch (e) { 
+        // No-prefix feature not available yet (table doesn't exist)
+    }
 
     // 1. Determine Prefix
     // Cache this potentially or stick to simple DB for now.

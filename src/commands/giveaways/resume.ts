@@ -43,24 +43,26 @@ export default {
                 });
             }
 
-            if (!giveaway.paused) {
+            if (!(giveaway as any).paused) {
                 return interaction.reply({
-                    content: `${Emojis.CROSS} This giveaway is not paused.`,
+                    content: `${Emojis.CROSS} This giveaway is not paused or pause feature not available.`,
                     ephemeral: true
                 });
             }
 
             // Calculate how long it was paused and extend the end time
-            const pauseDuration = Date.now() - Number(giveaway.pausedAt);
+            const pauseDuration = Date.now() - Number((giveaway as any).pausedAt || Date.now());
             const newEndTime = Number(giveaway.endTime) + pauseDuration;
 
             await prisma.giveaway.update({
                 where: { messageId },
                 data: {
-                    paused: false,
-                    pausedAt: null,
+                    ...(giveaway.hasOwnProperty('paused') ? {
+                        paused: false,
+                        pausedAt: null
+                    } : {}),
                     endTime: BigInt(newEndTime)
-                }
+                } as any
             });
 
             await interaction.reply({
@@ -99,21 +101,23 @@ export default {
                 return message.reply(`${Emojis.CROSS} This giveaway has already ended.`);
             }
 
-            if (!giveaway.paused) {
-                return message.reply(`${Emojis.CROSS} This giveaway is not paused.`);
+            if (!(giveaway as any).paused) {
+                return message.reply(`${Emojis.CROSS} This giveaway is not paused or pause feature not available.`);
             }
 
             // Calculate how long it was paused and extend the end time
-            const pauseDuration = Date.now() - Number(giveaway.pausedAt);
+            const pauseDuration = Date.now() - Number((giveaway as any).pausedAt || Date.now());
             const newEndTime = Number(giveaway.endTime) + pauseDuration;
 
             await prisma.giveaway.update({
                 where: { messageId },
                 data: {
-                    paused: false,
-                    pausedAt: null,
+                    ...(giveaway.hasOwnProperty('paused') ? {
+                        paused: false,
+                        pausedAt: null
+                    } : {}),
                     endTime: BigInt(newEndTime)
-                }
+                } as any
             });
 
             const reply = await message.reply(`${Emojis.TICK} Giveaway resumed successfully. The end time has been extended.`);

@@ -38,71 +38,61 @@ export default {
 
         const subcommand = interaction.options.getSubcommand();
 
-        if (subcommand === 'add') {
-            const user = interaction.options.getUser('user', true);
+        try {
+            if (subcommand === 'add') {
+                const user = interaction.options.getUser('user', true);
 
-            // Check if already exists
-            const existing = await prisma.noPrefixUser.findUnique({
-                where: { userId: user.id }
-            });
+                // Check if already exists
+                const existing = await (prisma as any).noPrefixUser.findUnique({
+                    where: { userId: user.id }
+                });
 
-            if (existing) {
-                return interaction.reply({ content: `${Emojis.CROSS} ${user.tag} is already in the no-prefix list.`, ephemeral: true });
-            }
-
-            await prisma.noPrefixUser.create({
-                data: {
-                    userId: user.id,
-                    username: user.tag
+                if (existing) {
+                    return interaction.reply({ content: `${Emojis.CROSS} ${user.tag} is already in the no-prefix list.`, ephemeral: true });
                 }
-            });
 
-            const embed = new EmbedBuilder()
-                .setDescription(`${Emojis.TICK} Added ${user.tag} to no-prefix list.\nThey can now use commands without prefix.`)
-                .setColor(Theme.EmbedColor)
-                .setTimestamp();
+                await (prisma as any).noPrefixUser.create({
+                    data: {
+                        userId: user.id,
+                        username: user.tag
+                    }
+                });
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ content: `${Emojis.TICK} Added ${user.tag} to no-prefix list.`, ephemeral: true });
+            } else if (subcommand === 'remove') {
+                const user = interaction.options.getUser('user', true);
 
-        } else if (subcommand === 'remove') {
-            const user = interaction.options.getUser('user', true);
+                // Check if exists
+                const existing = await (prisma as any).noPrefixUser.findUnique({
+                    where: { userId: user.id }
+                });
 
-            const existing = await prisma.noPrefixUser.findUnique({
-                where: { userId: user.id }
-            });
+                if (!existing) {
+                    return interaction.reply({ content: `${Emojis.CROSS} ${user.tag} is not in the no-prefix list.`, ephemeral: true });
+                }
 
-            if (!existing) {
-                return interaction.reply({ content: `${Emojis.CROSS} ${user.tag} is not in the no-prefix list.`, ephemeral: true });
+                await (prisma as any).noPrefixUser.delete({
+                    where: { userId: user.id }
+                });
+
+                return interaction.reply({ content: `${Emojis.TICK} Removed ${user.tag} from no-prefix list.`, ephemeral: true });
+            } else if (subcommand === 'show') {
+                const npUsers = await (prisma as any).noPrefixUser.findMany();
+
+                if (npUsers.length === 0) {
+                    return interaction.reply({ content: 'No users in the no-prefix list.', ephemeral: true });
+                }
+
+                const userList = npUsers.map((u: any, i: number) => `${i + 1}. ${u.username} (${u.userId})`).join('\n');
+
+                return interaction.reply({ content: `**No-Prefix Users:**\n${userList}`, ephemeral: true });
             }
-
-            await prisma.noPrefixUser.delete({
-                where: { userId: user.id }
+        } catch (error: any) {
+            console.error('NP command error:', error);
+            return interaction.reply({ 
+                content: `${Emojis.CROSS} This feature requires database migration. Please run \`migration.sql\` first.`, 
+                ephemeral: true 
             });
-
-            const embed = new EmbedBuilder()
-                .setDescription(`${Emojis.TICK} Removed ${user.tag} from no-prefix list.`)
-                .setColor(Theme.EmbedColor)
-                .setTimestamp();
-
-            await interaction.reply({ embeds: [embed], ephemeral: true });
-
-        } else if (subcommand === 'show') {
-            const npUsers = await prisma.noPrefixUser.findMany();
-
-            if (npUsers.length === 0) {
-                return interaction.reply({ content: 'No users in the no-prefix list.', ephemeral: true });
-            }
-
-            const userList = npUsers.map((u, i) => `${i + 1}. ${u.username} (${u.userId})`).join('\n');
-
-            const embed = new EmbedBuilder()
-                .setTitle('No-Prefix Users')
-                .setDescription(userList)
-                .setColor(Theme.EmbedColor)
-                .setFooter({ text: `Total: ${npUsers.length}` })
-                .setTimestamp();
-
-            await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     },
 
@@ -117,76 +107,64 @@ export default {
             return message.reply(`${Emojis.CROSS} Usage: \`!np <add|remove|show> [@user]\``);
         }
 
-        if (action === 'add') {
-            const user = message.mentions.users.first();
-            if (!user) {
-                return message.reply(`${Emojis.CROSS} Please mention a user to add.`);
-            }
-
-            const existing = await prisma.noPrefixUser.findUnique({
-                where: { userId: user.id }
-            });
-
-            if (existing) {
-                return message.reply(`${Emojis.CROSS} ${user.tag} is already in the no-prefix list.`);
-            }
-
-            await prisma.noPrefixUser.create({
-                data: {
-                    userId: user.id,
-                    username: user.tag
+        try {
+            if (action === 'add') {
+                const user = message.mentions.users.first();
+                if (!user) {
+                    return message.reply(`${Emojis.CROSS} Please mention a user to add.`);
                 }
-            });
 
-            const embed = new EmbedBuilder()
-                .setDescription(`${Emojis.TICK} Added ${user.tag} to no-prefix list.\nThey can now use commands without prefix.`)
-                .setColor(Theme.EmbedColor)
-                .setTimestamp();
+                const existing = await (prisma as any).noPrefixUser.findUnique({
+                    where: { userId: user.id }
+                });
 
-            await message.reply({ embeds: [embed] });
+                if (existing) {
+                    return message.reply(`${Emojis.CROSS} ${user.tag} is already in the no-prefix list.`);
+                }
 
-        } else if (action === 'remove') {
-            const user = message.mentions.users.first();
-            if (!user) {
-                return message.reply(`${Emojis.CROSS} Please mention a user to remove.`);
+                await (prisma as any).noPrefixUser.create({
+                    data: {
+                        userId: user.id,
+                        username: user.tag
+                    }
+                });
+
+                return message.reply(`${Emojis.TICK} Added ${user.tag} to no-prefix list.`);
+
+            } else if (action === 'remove') {
+                const user = message.mentions.users.first();
+                if (!user) {
+                    return message.reply(`${Emojis.CROSS} Please mention a user to remove.`);
+                }
+
+                const existing = await (prisma as any).noPrefixUser.findUnique({
+                    where: { userId: user.id }
+                });
+
+                if (!existing) {
+                    return message.reply(`${Emojis.CROSS} ${user.tag} is not in the no-prefix list.`);
+                }
+
+                await (prisma as any).noPrefixUser.delete({
+                    where: { userId: user.id }
+                });
+
+                return message.reply(`${Emojis.TICK} Removed ${user.tag} from no-prefix list.`);
+
+            } else if (action === 'show') {
+                const npUsers = await (prisma as any).noPrefixUser.findMany();
+
+                if (npUsers.length === 0) {
+                    return message.reply('No users in the no-prefix list.');
+                }
+
+                const userList = npUsers.map((u: any, i: number) => `${i + 1}. ${u.username} (${u.userId})`).join('\n');
+
+                return message.reply(`**No-Prefix Users:**\n${userList}`);
             }
-
-            const existing = await prisma.noPrefixUser.findUnique({
-                where: { userId: user.id }
-            });
-
-            if (!existing) {
-                return message.reply(`${Emojis.CROSS} ${user.tag} is not in the no-prefix list.`);
-            }
-
-            await prisma.noPrefixUser.delete({
-                where: { userId: user.id }
-            });
-
-            const embed = new EmbedBuilder()
-                .setDescription(`${Emojis.TICK} Removed ${user.tag} from no-prefix list.`)
-                .setColor(Theme.EmbedColor)
-                .setTimestamp();
-
-            await message.reply({ embeds: [embed] });
-
-        } else if (action === 'show') {
-            const npUsers = await prisma.noPrefixUser.findMany();
-
-            if (npUsers.length === 0) {
-                return message.reply('No users in the no-prefix list.');
-            }
-
-            const userList = npUsers.map((u, i) => `${i + 1}. ${u.username} (${u.userId})`).join('\n');
-
-            const embed = new EmbedBuilder()
-                .setTitle('No-Prefix Users')
-                .setDescription(userList)
-                .setColor(Theme.EmbedColor)
-                .setFooter({ text: `Total: ${npUsers.length}` })
-                .setTimestamp();
-
-            await message.reply({ embeds: [embed] });
+        } catch (error: any) {
+            console.error('NP command error:', error);
+            return message.reply(`${Emojis.CROSS} This feature requires database migration. Please run \`migration.sql\` first.`);
         }
     }
 };
