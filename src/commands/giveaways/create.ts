@@ -124,10 +124,6 @@ export default {
             winnersCount: winners,
             endTime: toBigInt(endTimeMs), // Use centralized time utility with UTC
             createdAt: toBigInt(Date.now()),
-            prize: prize,
-            winnersCount: winners,
-            endTime: BigInt(endTime),
-            createdAt: BigInt(Date.now()),
             roleRequirement: roleReq?.id || null,
             inviteRequirement: inviteReq,
             accountAgeRequirement: accountAgeReq,

@@ -24,7 +24,8 @@ export class SchedulerService {
         }, 2000);
         console.log("Scheduler service started with 2-second intervals for precise timing.");
         
-        // Initial check
+        // Initial checks and recovery
+        this.recoverActiveGiveaways();
         this.checkScheduledGiveaways();
         this.checkActiveGiveaways();
     }
@@ -34,6 +35,66 @@ export class SchedulerService {
         // Clear all active timers
         this.activeGiveawayTimers.forEach(timer => clearTimeout(timer));
         this.activeGiveawayTimers.clear();
+    }
+
+    /**
+     * Recover active giveaways on bot restart
+     * Updates embeds and ensures all active giveaways are being monitored
+     */
+    private async recoverActiveGiveaways() {
+        try {
+            console.log('[Scheduler] Recovering active giveaways...');
+            
+            const activeGiveaways = await prisma.giveaway.findMany({
+                where: {
+                    ended: false
+                }
+            });
+
+            console.log(`[Scheduler] Found ${activeGiveaways.length} active giveaways to recover`);
+
+            for (const giveaway of activeGiveaways) {
+                try {
+                    const channel = await this.client.channels.fetch(giveaway.channelId).catch(() => null) as TextChannel | null;
+                    if (!channel) {
+                        console.log(`[Scheduler] Channel ${giveaway.channelId} not found for giveaway ${giveaway.messageId}`);
+                        continue;
+                    }
+
+                    // Try to fetch and update the message
+                    const message = await channel.messages.fetch(giveaway.messageId).catch(() => null);
+                    if (!message) {
+                        console.log(`[Scheduler] Message ${giveaway.messageId} not found, marking giveaway as ended`);
+                        await prisma.giveaway.update({
+                            where: { id: giveaway.id },
+                            data: { ended: true }
+                        });
+                        continue;
+                    }
+
+                    // Count current participants
+                    const participantCount = await prisma.participant.count({
+                        where: { giveawayId: giveaway.id }
+                    });
+
+                    // Update embed with current participant count
+                    const { createGiveawayEmbed } = await import('../utils/embeds');
+                    const embed = createGiveawayEmbed(giveaway, participantCount);
+                    await message.edit({ embeds: [embed] }).catch(e => 
+                        console.log(`[Scheduler] Failed to update embed for ${giveaway.messageId}:`, e.message)
+                    );
+
+                    console.log(`[Scheduler] Recovered giveaway ${giveaway.messageId} with ${participantCount} participants`);
+
+                } catch (error) {
+                    console.error(`[Scheduler] Error recovering giveaway ${giveaway.messageId}:`, error);
+                }
+            }
+
+            console.log('[Scheduler] Active giveaway recovery complete');
+        } catch (error) {
+            console.error('[Scheduler] Error in recoverActiveGiveaways:', error);
+        }
     }
 
     /**
