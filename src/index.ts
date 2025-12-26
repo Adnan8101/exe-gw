@@ -58,13 +58,8 @@ client.once('ready', async () => {
     // Set bot activity/presence
     client.user?.setPresence({
         activities: [{
-            name: 'Managing Giveaways in /exeop',
-            type: 3, // Watching
-            emoji: {
-                name: 'Exe_Gw',
-                id: '1454033571273506929',
-                animated: true
-            }
+            name: '🎉 Managing Giveaways in /exeop',
+            type: 3 // Watching
         }],
         status: 'online'
     });
