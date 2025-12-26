@@ -17,3 +17,17 @@ CREATE TABLE IF NOT EXISTS "NoPrefixUser" (
 
 -- Create unique index on userId
 CREATE UNIQUE INDEX IF NOT EXISTS "NoPrefixUser_userId_key" ON "NoPrefixUser"("userId");
+
+-- Create BlacklistChannel table
+CREATE TABLE IF NOT EXISTS "BlacklistChannel" (
+    "id" SERIAL NOT NULL,
+    "guildId" TEXT NOT NULL,
+    "channelId" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BlacklistChannel_pkey" PRIMARY KEY ("id")
+);
+
+-- Create unique index on guildId, channelId, type
+CREATE UNIQUE INDEX IF NOT EXISTS "BlacklistChannel_guildId_channelId_type_key" ON "BlacklistChannel"("guildId", "channelId", "type");

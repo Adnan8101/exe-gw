@@ -15,7 +15,8 @@ export default {
                 .setRequired(true)
                 .addChoices(
                     { name: 'Messages', value: 'messages' },
-                    { name: 'Invites', value: 'invites' }
+                    { name: 'Invites', value: 'invites' },
+                    { name: 'Voice Time', value: 'voice' }
                 )),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -31,9 +32,11 @@ export default {
             type = 'messages';
         } else if (flag === '-i') {
             type = 'invites';
+        } else if (flag === '-v' || flag === '-vc') {
+            type = 'voice';
         } else {
             const embed = new EmbedBuilder()
-                .setDescription(`${Emojis.CROSS} **Invalid Usage**\n\`\`\`!lb -m (messages)\n!lb -i (invites)\`\`\``)
+                .setDescription(`${Emojis.CROSS} **Invalid Usage**\n\`\`\`!lb -m (messages)\n!lb -i (invites)\n!lb -v (voice time)\`\`\``)
                 .setColor(Theme.ErrorColor)
                 .setTimestamp();
             return message.channel.send({ embeds: [embed] });
@@ -146,6 +149,68 @@ export default {
 
                 const embed = new EmbedBuilder()
                     .setTitle('📊 Invite Leaderboard')
+                    .setDescription(description)
+                    .setColor(Theme.EmbedColor)
+                    .setFooter({ text: `${guild.name} • Top 10 Users` })
+                    .setTimestamp();
+
+                if (guild.iconURL()) {
+                    embed.setThumbnail(guild.iconURL()!);
+                }
+
+                if (isInteraction) {
+                    return ctx.reply({ embeds: [embed] });
+                }
+                return ctx.channel.send({ embeds: [embed] });
+
+            } else if (type === 'voice') {
+                // Get top 10 users by voice time
+                const topUsers = await prisma.userStats.findMany({
+                    where: { guildId },
+                    orderBy: { voiceMinutes: 'desc' },
+                    take: 10
+                });
+
+                if (topUsers.length === 0) {
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} No voice statistics found for this server yet.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    
+                    if (isInteraction) {
+                        return ctx.reply({ embeds: [embed], ephemeral: true });
+                    }
+                    return ctx.channel.send({ embeds: [embed] });
+                }
+
+                const guild = ctx.guild || await ctx.client.guilds.fetch(guildId);
+                
+                let description = '';
+                for (let i = 0; i < topUsers.length; i++) {
+                    const user = topUsers[i];
+                    const rank = i + 1;
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `\`${rank}.\``;
+                    
+                    // Format time nicely
+                    const hours = Math.floor(user.voiceMinutes / 60);
+                    const minutes = user.voiceMinutes % 60;
+                    let timeStr = '';
+                    if (hours > 0) {
+                        timeStr = `${hours}h ${minutes}m`;
+                    } else {
+                        timeStr = `${minutes}m`;
+                    }
+                    
+                    try {
+                        const member = await guild.members.fetch(user.userId);
+                        description += `${medal} **${member.user.tag}** - \`${timeStr}\`\n`;
+                    } catch {
+                        description += `${medal} <@${user.userId}> - \`${timeStr}\`\n`;
+                    }
+                }
+
+                const embed = new EmbedBuilder()
+                    .setTitle('🎙️ Voice Time Leaderboard')
                     .setDescription(description)
                     .setColor(Theme.EmbedColor)
                     .setFooter({ text: `${guild.name} • Top 10 Users` })

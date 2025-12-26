@@ -4,16 +4,50 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class Tracker {
-    private voiceSessions: Map<string, number> = new Map();
+    private voiceSessions: Map<string, { guildId: string, joinTime: number }> = new Map();
     private messageCounts: Map<string, Map<string, number>> = new Map(); // guildId -> userId -> count
+    private blacklistCache: Map<string, Set<string>> = new Map(); // guildId -> Set of channelIds for each type
 
     constructor() {
         // Start flusher - flush every 10 seconds for real-time updates
         setInterval(() => this.flushMessageCounts(), 10 * 1000);
+        // Flush voice minutes every 30 seconds
+        setInterval(() => this.flushVoiceMinutes(), 30 * 1000);
+        // Refresh blacklist cache every 5 minutes
+        setInterval(() => this.refreshBlacklistCache(), 5 * 60 * 1000);
+        this.refreshBlacklistCache();
+    }
+
+    private async refreshBlacklistCache() {
+        try {
+            const blacklists = await (prisma as any).blacklistChannel?.findMany();
+            if (blacklists) {
+                this.blacklistCache.clear();
+                for (const bl of blacklists) {
+                    const key = `${bl.guildId}_${bl.type}`;
+                    if (!this.blacklistCache.has(key)) {
+                        this.blacklistCache.set(key, new Set());
+                    }
+                    this.blacklistCache.get(key)!.add(bl.channelId);
+                }
+            }
+        } catch (error) {
+            // Blacklist feature not yet migrated
+        }
+    }
+
+    private isChannelBlacklisted(guildId: string, channelId: string, type: 'message' | 'voice'): boolean {
+        const key = `${guildId}_${type}`;
+        return this.blacklistCache.get(key)?.has(channelId) || false;
     }
 
     public async onMessageCreate(message: Message) {
-        if (message.author.bot || !message.guildId) return;
+        if (message.author.bot || !message.guildId || !message.channelId) return;
+
+        // Check if channel is blacklisted for messages
+        if (this.isChannelBlacklisted(message.guildId, message.channelId, 'message')) {
+            return;
+        }
 
         const guildId = message.guildId;
         const userId = message.author.id;
@@ -28,32 +62,34 @@ class Tracker {
 
     public async onVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) {
         const userId = newState.member?.id;
-        if (!userId) return;
+        if (!userId || newState.member?.user.bot) return;
         const guildId = newState.guild.id;
 
         const now = Date.now();
-        const isInVoice = newState.channelId !== null;
+        const isInVoice = newState.channelId !== null && !this.isChannelBlacklisted(guildId, newState.channelId, 'voice');
         const wasInVoice = oldState.channelId !== null;
 
-        // Check if previously in voice, calculate duration
-        if (this.voiceSessions.has(userId)) {
-            const joinTime = this.voiceSessions.get(userId)!;
-            const durationMs = now - joinTime;
+        const sessionKey = `${guildId}_${userId}`;
+
+        // If user was in voice and moved/left, calculate duration
+        if (this.voiceSessions.has(sessionKey)) {
+            const session = this.voiceSessions.get(sessionKey)!;
+            const durationMs = now - session.joinTime;
             const minutes = Math.floor(durationMs / 1000 / 60);
 
             if (minutes > 0) {
-                await this.addVoiceMinutes(guildId, userId, minutes);
-                // Reset timestamp if still in voice (switching channels)
-                // or delete if left
+                await this.addVoiceMinutes(session.guildId, userId, minutes);
             }
+            
+            this.voiceSessions.delete(sessionKey);
         }
 
+        // If user joined a non-blacklisted voice channel, start tracking
         if (isInVoice) {
-            // Started or switched channel, reset timer
-            this.voiceSessions.set(userId, now);
-        } else {
-            // Left voice
-            this.voiceSessions.delete(userId);
+            this.voiceSessions.set(sessionKey, {
+                guildId: guildId,
+                joinTime: now
+            });
         }
     }
 
@@ -115,6 +151,21 @@ class Tracker {
     // Get pending message count for a user (not yet flushed to DB)
     public getPendingMessageCount(guildId: string, userId: string): number {
         return this.messageCounts.get(guildId)?.get(userId) || 0;
+    }
+
+    private async flushVoiceMinutes() {
+        const now = Date.now();
+        for (const [sessionKey, session] of this.voiceSessions.entries()) {
+            const durationMs = now - session.joinTime;
+            const minutes = Math.floor(durationMs / 1000 / 60);
+
+            if (minutes > 0) {
+                const userId = sessionKey.split('_')[1];
+                await this.addVoiceMinutes(session.guildId, userId, minutes);
+                // Reset join time
+                session.joinTime = now;
+            }
+        }
     }
 }
 

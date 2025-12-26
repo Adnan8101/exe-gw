@@ -113,3 +113,13 @@ model NoPrefixUser {
   username  String
   createdAt DateTime @default(now())
 }
+
+model BlacklistChannel {
+  id        Int      @id @default(autoincrement())
+  guildId   String
+  channelId String
+  type      String   // "message" or "voice"
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, channelId, type])
+}
