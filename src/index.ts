@@ -84,10 +84,12 @@ client.once('ready', async () => {
     scheduler.start();
 });
 
+const OWNER_ID = '929297205796417597';
+
 client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
-        // Check if guild is allowed (except for guildmanage command)
-        if (interaction.guildId && interaction.commandName !== 'guildmanage') {
+        // Check if guild is allowed (except for guildmanage command and owner)
+        if (interaction.guildId && interaction.commandName !== 'guildmanage' && interaction.user.id !== OWNER_ID) {
             try {
                 const isAllowed = await prisma.allowedGuild.findUnique({
                     where: { guildId: interaction.guildId }
@@ -152,37 +154,40 @@ client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
     // Check if guild is allowed (check early to avoid processing unauthorized guilds)
-    try {
-        const isAllowed = await prisma.allowedGuild.findUnique({
-            where: { guildId: message.guildId! }
-        });
+    // Skip check for owner
+    if (message.author.id !== OWNER_ID) {
+        try {
+            const isAllowed = await prisma.allowedGuild.findUnique({
+                where: { guildId: message.guildId! }
+            });
 
-        if (!isAllowed) {
-            // Only respond to direct bot mentions in unauthorized guilds
-            const botMention = `<@${client.user?.id}>`;
-            const botMentionNickname = `<@!${client.user?.id}>`;
-            if (message.content === botMention || message.content === botMentionNickname) {
-                const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-                const embed = new EmbedBuilder()
-                    .setTitle('⛔ Unauthorized Guild')
-                    .setDescription('This guild is not authorized to use me.\n\nContact the developer for more information.')
-                    .setColor(0xFF0000)
-                    .setTimestamp();
+            if (!isAllowed) {
+                // Only respond to direct bot mentions in unauthorized guilds
+                const botMention = `<@${client.user?.id}>`;
+                const botMentionNickname = `<@!${client.user?.id}>`;
+                if (message.content === botMention || message.content === botMentionNickname) {
+                    const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+                    const embed = new EmbedBuilder()
+                        .setTitle('⛔ Unauthorized Guild')
+                        .setDescription('This guild is not authorized to use me.\n\nContact the developer for more information.')
+                        .setColor(0xFF0000)
+                        .setTimestamp();
 
-                const row = new ActionRowBuilder()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setLabel('Join Support Server')
-                            .setStyle(ButtonStyle.Link)
-                            .setURL('https://discord.gg/exeop')
-                    );
+                    const row = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setLabel('Join Support Server')
+                                .setStyle(ButtonStyle.Link)
+                                .setURL('https://discord.gg/exeop')
+                        );
 
-                return message.reply({ embeds: [embed], components: [row] });
+                    return message.reply({ embeds: [embed], components: [row] });
+                }
+                return; // Don't process any commands in unauthorized guilds
             }
-            return; // Don't process any commands in unauthorized guilds
+        } catch (error) {
+            console.error('Error checking guild authorization:', error);
         }
-    } catch (error) {
-        console.error('Error checking guild authorization:', error);
     }
 
     // Check for bot mention (not @everyone, @here, or role mention)
