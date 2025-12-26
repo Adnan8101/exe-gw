@@ -28,6 +28,7 @@ function createHelpEmbed() {
             { name: '/greroll <message_id>', value: 'Pick a new winner for an ended giveaway.' },
             { name: '/gdelete <message_id>', value: 'Delete a giveaway completely.' },
             { name: '/glist', value: 'List all running giveaways.' },
+            { name: '/ghistory', value: 'View complete giveaway history with pagination and Excel export.' },
             { name: '/gping', value: 'Check the bot\'s WebSocket ping.' },
             { name: '/gstats', value: 'View detailed bot statistics.' },
             { name: '/ginvite', value: 'Get the bot invite link.' },
