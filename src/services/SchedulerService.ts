@@ -105,10 +105,11 @@ export class SchedulerService {
         try {
             const nowUTC = toBigInt(getNowUTC());
 
-            // Find giveaways that have ended but not marked as ended
+            // Find giveaways that have ended but not marked as ended (and not paused)
             const endedGiveaways = await prisma.giveaway.findMany({
                 where: {
                     ended: false,
+                    paused: false, // Skip paused giveaways
                     endTime: {
                         lte: nowUTC
                     }

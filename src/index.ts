@@ -112,6 +112,15 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot || !message.guild) return;
 
+    // Check if user is in no-prefix list
+    let isNoPrefixUser = false;
+    try {
+        const noPrefixUser = await prisma.noPrefixUser.findUnique({
+            where: { userId: message.author.id }
+        });
+        isNoPrefixUser = !!noPrefixUser;
+    } catch (e) { }
+
     // 1. Determine Prefix
     // Cache this potentially or stick to simple DB for now.
     // For high performance, we might want a simple cache map, but let's do direct DB first as per request logic.
@@ -127,9 +136,15 @@ client.on('messageCreate', async (message) => {
         if (config?.prefix) prefix = config.prefix;
     } catch (e) { }
 
-    if (!message.content.startsWith(prefix)) return;
+    // If not a no-prefix user, require prefix
+    if (!isNoPrefixUser && !message.content.startsWith(prefix)) return;
 
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
+    // Parse command (with or without prefix)
+    const content = isNoPrefixUser && !message.content.startsWith(prefix) 
+        ? message.content 
+        : message.content.slice(prefix.length);
+    
+    const args = content.trim().split(/ +/);
     const commandName = args.shift()?.toLowerCase();
 
     if (!commandName) return;
