@@ -124,7 +124,7 @@ client.on('messageCreate', async (message) => {
             if (config?.prefix) prefix = config.prefix;
         } catch (e) { }
         
-        return message.reply(`My prefix is \`${prefix}\`\nBegin with \`${prefix}help\``);
+        return message.reply(`My prefix is \`${prefix}\`\nBegin with \`${prefix}ghelp\``);
     }
 
     // Check if user is in no-prefix list
