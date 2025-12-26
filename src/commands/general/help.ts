@@ -18,25 +18,15 @@ export default {
 
 function createHelpEmbed() {
     return new EmbedBuilder()
-        .setTitle('Giveaway Commands')
+        .setTitle('🎉 Bot Commands')
         .setColor(Theme.EmbedColor)
-        .setDescription('All commands require **Manage Server** permission.')
+        .setDescription('Here are all available commands:')
         .addFields(
-            { name: '/gstart <time> <winners> <prize>', value: 'Quick start a giveaway.' },
-            { name: '/gcreate', value: 'Start a giveaway with advanced options (requirements, roles, etc.).' },
-            { name: '/gend <message_id>', value: 'End a giveaway immediately.' },
-            { name: '/gcancel <message_id>', value: 'Cancel a giveaway.' },
-            { name: '/gstop <message_id>', value: 'Pause a giveaway countdown.' },
-            { name: '/gresume <message_id>', value: 'Resume a paused giveaway.' },
-            { name: '/greroll <message_id>', value: 'Pick a new winner for an ended giveaway.' },
-            { name: '/gdelete <message_id>', value: 'Delete a giveaway completely.' },
-            { name: '/glist', value: 'List all running giveaways.' },
-            { name: '/ghistory', value: 'View complete giveaway history with pagination and Excel export.' },
-            { name: '/messages [user]', value: 'Check message count (alias: m).' },
-            { name: '/invites [user]', value: 'Check invite count (alias: i).' },
-            { name: '/gping', value: 'Check the bot\'s WebSocket ping.' },
-            { name: '/gstats', value: 'View detailed bot statistics.' },
-            { name: '/ginvite', value: 'Get the bot invite link.' },
-            { name: '/gabout', value: 'Bot information.' }
-        );
+            { name: '**Giveaway Commands** (Manage Server required)', value: '`/gstart` - Quick start a giveaway\n`/gcreate` - Advanced giveaway creation\n`/gend <id>` - End a giveaway\n`/gcancel <id>` - Cancel a giveaway\n`/gstop <id>` - Pause a giveaway\n`/gresume <id>` - Resume a paused giveaway\n`/greroll <id>` - Reroll winners\n`/gdelete <id>` - Delete a giveaway\n`/glist` - List all giveaways\n`/ghistory` - View giveaway history\n`/grefresh` - Refresh giveaway embeds\n`/gschedule` - Schedule a giveaway' },
+            { name: '**Statistics Commands**', value: '`/messages [@user]` or `!m [@user]` - Check message count\n`/vc [@user]` - Check voice time stats\n`/invites [@user]` or `!i [@user]` - Check invite count\n`/lb -m` - Message leaderboard\n`/lb -v` - Voice time leaderboard\n`/lb -i` - Invite leaderboard' },
+            { name: '**Admin Commands** (Manage Server required)', value: '`/blacklist add/remove/show` - Manage tracking blacklist\n`/setprefix <prefix>` - Set custom prefix\n`/np add/remove/show` - Manage no-prefix users (Owner only)' },
+            { name: '**General Commands**', value: '`/gping` - Check bot latency\n`/gstats` - View bot statistics\n`/ginvite` - Get bot invite link\n`/gabout` - Bot information\n`/bsetting` - View birthday settings' }
+        )
+        .setFooter({ text: 'Use prefix ! or / for commands • Created by Exe Team' })
+        .setTimestamp();
 }
