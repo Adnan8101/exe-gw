@@ -55,6 +55,15 @@ client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}!`);
     console.log(`Serving ${client.guilds.cache.size} guilds`);
 
+    // Set bot activity/presence
+    client.user?.setPresence({
+        activities: [{
+            name: '<a:Exe_Gw:1454033571273506929> Managing Giveaways in /exeop',
+            type: 3 // Watching
+        }],
+        status: 'online'
+    });
+
     // Cache invites for all guilds
     for (const [id, guild] of client.guilds.cache) {
         await inviteService.cacheGuildInvites(guild);
