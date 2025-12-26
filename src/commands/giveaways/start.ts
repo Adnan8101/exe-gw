@@ -3,25 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import { createGiveawayEmbed } from '../../utils/embeds';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
+import { 
+    parseDuration, 
+    validateDuration, 
+    calculateEndTimeFromString, 
+    toBigInt 
+} from '../../utils/timeUtils';
 
 const prisma = new PrismaClient();
-
-function parseDuration(durationStr: string): number | null {
-    const regex = /^(\d+)(m|h|d|s)$/;
-    const match = durationStr.match(regex);
-    if (!match) return null;
-
-    const value = parseInt(match[1]);
-    const unit = match[2];
-
-    switch (unit) {
-        case 's': return value * 1000;
-        case 'm': return value * 60 * 1000;
-        case 'h': return value * 60 * 60 * 1000;
-        case 'd': return value * 24 * 60 * 60 * 1000;
-        default: return null;
-    }
-}
 
 export default {
     data: new SlashCommandBuilder()
@@ -87,14 +76,22 @@ export default {
     },
 
     async run(ctx: any, channel: TextChannel, durationStr: string, winners: number, prize: string) {
-        const duration = parseDuration(durationStr);
-        if (!duration) {
-            const msg = `${Emojis.CROSS} Invalid duration. Use format: 30s, 1m, 2h`;
+        // Validate duration
+        const validation = validateDuration(durationStr);
+        if (!validation.isValid) {
+            const msg = `${Emojis.CROSS} ${validation.error}`;
             if (ctx.reply) return ctx.reply({ content: msg, ephemeral: true });
             return;
         }
 
-        const endTime = Date.now() + duration;
+        // Calculate end time using centralized utility (UTC)
+        const endTimeMs = calculateEndTimeFromString(durationStr);
+        if (!endTimeMs) {
+            const msg = `${Emojis.CROSS} Invalid duration format. Use: 30s, 2m, 1h, 7d`;
+            if (ctx.reply) return ctx.reply({ content: msg, ephemeral: true });
+            return;
+        }
+
         const hostId = ctx.user ? ctx.user.id : ctx.author.id;
         const guildId = ctx.guildId;
 
@@ -104,12 +101,13 @@ export default {
             hostId: hostId,
             prize: prize,
             winnersCount: winners,
-            endTime: BigInt(endTime),
-            createdAt: BigInt(Date.now()),
+            endTime: toBigInt(endTimeMs), // Use centralized time utility with UTC
+            createdAt: toBigInt(Date.now()),
             emoji: "🎉"
         };
 
         try {
+            // For slash commands, use ephemeral replies
             if (ctx.deferReply) await ctx.deferReply({ ephemeral: true });
 
             const gForEmbed: any = { ...giveawayData, messageId: "", id: 0 };
@@ -126,8 +124,25 @@ export default {
             });
 
             const successMsg = `${Emojis.TICK} Giveaway started in ${channel}!`;
-            if (ctx.editReply) await ctx.editReply(successMsg);
-            else await ctx.reply(successMsg);
+            
+            // For slash commands - send ephemeral reply
+            if (ctx.editReply) {
+                await ctx.editReply(successMsg);
+            } 
+            // For prefix commands - send reply then delete both messages
+            else {
+                const reply = await ctx.reply(successMsg);
+                
+                // Delete command message and success message after 3 seconds
+                setTimeout(async () => {
+                    try {
+                        await ctx.delete().catch(() => {});
+                        await reply.delete().catch(() => {});
+                    } catch (e) {
+                        // Ignore deletion errors
+                    }
+                }, 3000);
+            }
 
         } catch (error) {
             console.error(error);

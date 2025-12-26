@@ -4,25 +4,13 @@ import * as moment from 'moment-timezone';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
 import { Theme } from '../../utils/theme';
+import { 
+    parseDuration, 
+    validateDuration, 
+    toBigInt 
+} from '../../utils/timeUtils';
 
 const prisma = new PrismaClient();
-
-function parseDuration(durationStr: string): number | null {
-    const regex = /^(\d+)(m|h|d|s)$/;
-    const match = durationStr.match(regex);
-    if (!match) return null;
-
-    const value = parseInt(match[1]);
-    const unit = match[2];
-
-    switch (unit) {
-        case 's': return value * 1000;
-        case 'm': return value * 60 * 1000;
-        case 'h': return value * 60 * 60 * 1000;
-        case 'd': return value * 24 * 60 * 60 * 1000;
-        default: return null;
-    }
-}
 
 // Helper to parse Time "HH:mm" with Timezone
 function getScheduledTime(timeStr: string, timezone: string): number | null {
@@ -162,23 +150,29 @@ export default {
             }
         };
 
-        // Parse Duration
-        const duration = parseDuration(durationStr);
-        if (!duration) {
+        // Validate Duration
+        const validation = validateDuration(durationStr);
+        if (!validation.isValid) {
+            const msg = { content: `${Emojis.CROSS} ${validation.error}`, ephemeral: true };
+            return await reply(msg);
+        }
+
+        const durationMs = parseDuration(durationStr);
+        if (!durationMs) {
             const msg = { content: `${Emojis.CROSS} Invalid duration format.`, ephemeral: true };
             return await reply(msg);
         }
 
-        // Parse Start Time with Timezone
-        const startTime = getScheduledTime(timeStr, timezone);
-        if (!startTime) {
+        // Parse Start Time with Timezone (convert to UTC milliseconds)
+        const startTimeMs = getScheduledTime(timeStr, timezone);
+        if (!startTimeMs) {
             const msg = { content: `${Emojis.CROSS} Invalid time or timezone.\n**Time format**: HH:mm\n**Timezone**: Valid IANA Zone (e.g., Asia/Kolkata, UTC)\nYour input: ${timeStr} in ${timezone}`, ephemeral: true };
             return await reply(msg);
         }
 
         // JSON Payload for later execution
         const payload = {
-            duration,
+            duration: durationMs, // Store duration in milliseconds
             roleRequirement: opts.roleReq || null,
             inviteRequirement: opts.inviteReq || 0,
             captchaRequirement: opts.captchaReq || false,
@@ -198,12 +192,12 @@ export default {
                     hostId: ctx.user ? ctx.user.id : ctx.author.id,
                     prize: prize,
                     winnersCount: winners,
-                    startTime: BigInt(startTime),
+                    startTime: toBigInt(startTimeMs), // Use UTC timestamp
                     payload: JSON.stringify(payload)
                 }
             });
 
-            const timestamp = Math.floor(startTime / 1000);
+            const timestamp = Math.floor(startTimeMs / 1000);
             const msg = { content: `${Emojis.TICK} Giveaway scheduled for <t:${timestamp}:F> (<t:${timestamp}:R>) in ${channel}!\n**Prize:** ${prize}\n**Timezone:** ${timezone}`, ephemeral: true };
 
             await reply(msg);

@@ -3,25 +3,15 @@ import { PrismaClient } from '@prisma/client';
 import { createGiveawayEmbed } from '../../utils/embeds';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
+import { 
+    parseDuration, 
+    validateDuration, 
+    calculateEndTimeFromString, 
+    toBigInt, 
+    formatDuration 
+} from '../../utils/timeUtils';
 
 const prisma = new PrismaClient();
-
-function parseDuration(durationStr: string): number | null {
-    const regex = /^(\d+)(m|h|d|s)$/;
-    const match = durationStr.match(regex);
-    if (!match) return null;
-
-    const value = parseInt(match[1]);
-    const unit = match[2];
-
-    switch (unit) {
-        case 's': return value * 1000;
-        case 'm': return value * 60 * 1000;
-        case 'h': return value * 60 * 60 * 1000;
-        case 'd': return value * 24 * 60 * 60 * 1000;
-        default: return null;
-    }
-}
 
 export default {
     data: new SlashCommandBuilder()
@@ -90,10 +80,24 @@ export default {
         const durationStr = interaction.options.getString('duration', true);
         const channel = interaction.options.getChannel('channel') as TextChannel || interaction.channel as TextChannel;
 
-        const duration = parseDuration(durationStr);
-        if (!duration) {
-            return interaction.reply({ content: `${Emojis.CROSS} Invalid duration format. Use 10m, 1h, 2d, etc.`, ephemeral: true });
+        // Validate duration
+        const validation = validateDuration(durationStr);
+        if (!validation.isValid) {
+            return interaction.reply({
+                content: `${Emojis.CROSS} ${validation.error}`,
+                ephemeral: true
+            });
         }
+
+        // Calculate end time using centralized utility (UTC)
+        const endTimeMs = calculateEndTimeFromString(durationStr);
+        if (!endTimeMs) {
+            return interaction.reply({
+                content: `${Emojis.CROSS} Invalid duration format. Use: 30s, 2m, 1h, 7d`,
+                ephemeral: true
+            });
+        }
+
         if (winners < 1) {
             return interaction.reply({ content: `${Emojis.CROSS} Invalid number of winners.`, ephemeral: true });
         }
@@ -112,12 +116,14 @@ export default {
         const thumbnail = interaction.options.getString('thumbnail');
         const customEmoji = interaction.options.getString('custom_emoji') || "🎉";
 
-        const endTime = Date.now() + duration;
-
         const giveawayData = {
             channelId: channel.id,
             guildId: interaction.guildId!,
             hostId: interaction.user.id,
+            prize: prize,
+            winnersCount: winners,
+            endTime: toBigInt(endTimeMs), // Use centralized time utility with UTC
+            createdAt: toBigInt(Date.now()),
             prize: prize,
             winnersCount: winners,
             endTime: BigInt(endTime),

@@ -1,6 +1,7 @@
 import { Client, TextChannel } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { GiveawayService } from './GiveawayService';
+import { getNowUTC, hasEnded, toBigInt } from '../utils/timeUtils';
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,7 @@ export class SchedulerService {
     private client: Client;
     private giveawayService: GiveawayService;
     private interval: NodeJS.Timeout | null = null;
+    private activeGiveawayTimers: Map<string, NodeJS.Timeout> = new Map();
 
     constructor(client: Client) {
         this.client = client;
@@ -15,15 +17,61 @@ export class SchedulerService {
     }
 
     public start() {
-        // Check every 10 seconds for better responsiveness
-        this.interval = setInterval(() => this.checkScheduledGiveaways(), 10 * 1000);
-        console.log("Scheduler service started.");
+        // Check every 2 seconds for precise timing
+        this.interval = setInterval(() => {
+            this.checkScheduledGiveaways();
+            this.checkActiveGiveaways();
+        }, 2000);
+        console.log("Scheduler service started with 2-second intervals for precise timing.");
+        
         // Initial check
         this.checkScheduledGiveaways();
+        this.checkActiveGiveaways();
     }
 
     public stop() {
         if (this.interval) clearInterval(this.interval);
+        // Clear all active timers
+        this.activeGiveawayTimers.forEach(timer => clearTimeout(timer));
+        this.activeGiveawayTimers.clear();
+    }
+
+    /**
+     * Check for active giveaways that need to end
+     * Uses precise UTC timing
+     */
+    private async checkActiveGiveaways() {
+        try {
+            const nowUTC = toBigInt(getNowUTC());
+
+            // Find giveaways that have ended but not marked as ended
+            const endedGiveaways = await prisma.giveaway.findMany({
+                where: {
+                    ended: false,
+                    endTime: {
+                        lte: nowUTC
+                    }
+                }
+            });
+
+            for (const giveaway of endedGiveaways) {
+                // Avoid duplicate processing
+                if (this.activeGiveawayTimers.has(giveaway.messageId)) {
+                    continue;
+                }
+
+                console.log(`[Scheduler] Giveaway ${giveaway.messageId} has ended. Ending now...`);
+                
+                try {
+                    await this.giveawayService.endGiveaway(giveaway.messageId);
+                    console.log(`[Scheduler] Successfully ended giveaway ${giveaway.messageId}`);
+                } catch (error) {
+                    console.error(`[Scheduler] Failed to end giveaway ${giveaway.messageId}:`, error);
+                }
+            }
+        } catch (error) {
+            console.error('[Scheduler] Error checking active giveaways:', error);
+        }
     }
 
     private async checkScheduledGiveaways() {
