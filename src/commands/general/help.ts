@@ -6,7 +6,7 @@ const PAGES = [
     {
         title: 'Giveaway Commands',
         description: 'Powerful giveaway management system',
-        color: '#5865F2',
+        color: '#FFD700',
         fields: [
             { 
                 name: 'Quick Start', 
@@ -34,7 +34,7 @@ const PAGES = [
     {
         title: 'Statistics & Tracking',
         description: 'Track user activity and engagement',
-        color: '#5865F2',
+        color: '#FFD700',
         fields: [
             { 
                 name: 'Message Tracking', 
@@ -62,7 +62,7 @@ const PAGES = [
     {
         title: 'Admin & Configuration',
         description: 'Server management and customization',
-        color: '#5865F2',
+        color: '#FFD700',
         fields: [
             { 
                 name: 'Channel Blacklist', 
@@ -80,7 +80,7 @@ const PAGES = [
     {
         title: 'Utility & Information',
         description: 'General bot features and info',
-        color: '#5865F2',
+        color: '#FFD700',
         fields: [
             { 
                 name: 'Bot Statistics', 
