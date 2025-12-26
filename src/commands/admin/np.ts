@@ -33,7 +33,11 @@ export default {
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (interaction.user.id !== OWNER_ID) {
-            return interaction.reply({ content: `${Emojis.CROSS} This command is owner only.`, ephemeral: true });
+            const embed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} This command is owner only.`)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
         const subcommand = interaction.options.getSubcommand();
@@ -48,7 +52,11 @@ export default {
                 });
 
                 if (existing) {
-                    return interaction.reply({ content: `${Emojis.CROSS} ${user.tag} is already in the no-prefix list.`, ephemeral: true });
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} **${user.tag}** is already in the no-prefix list.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
 
                 await (prisma as any).noPrefixUser.create({
@@ -58,7 +66,11 @@ export default {
                     }
                 });
 
-                return interaction.reply({ content: `${Emojis.TICK} Added ${user.tag} to no-prefix list.`, ephemeral: true });
+                const embed = new EmbedBuilder()
+                    .setDescription(`${Emojis.TICK} Successfully added **${user.tag}** to no-prefix list.`)
+                    .setColor(Theme.SuccessColor)
+                    .setTimestamp();
+                return interaction.reply({ embeds: [embed], ephemeral: true });
             } else if (subcommand === 'remove') {
                 const user = interaction.options.getUser('user', true);
 
@@ -68,29 +80,51 @@ export default {
                 });
 
                 if (!existing) {
-                    return interaction.reply({ content: `${Emojis.CROSS} ${user.tag} is not in the no-prefix list.`, ephemeral: true });
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} **${user.tag}** is not in the no-prefix list.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
 
                 await (prisma as any).noPrefixUser.delete({
                     where: { userId: user.id }
                 });
 
-                return interaction.reply({ content: `${Emojis.TICK} Removed ${user.tag} from no-prefix list.`, ephemeral: true });
+                const embed = new EmbedBuilder()
+                    .setDescription(`${Emojis.TICK} Successfully removed **${user.tag}** from no-prefix list.`)
+                    .setColor(Theme.SuccessColor)
+                    .setTimestamp();
+                return interaction.reply({ embeds: [embed], ephemeral: true });
             } else if (subcommand === 'show') {
                 const npUsers = await (prisma as any).noPrefixUser.findMany();
 
                 if (npUsers.length === 0) {
-                    return interaction.reply({ content: 'No users in the no-prefix list.', ephemeral: true });
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} No users in the no-prefix list.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
 
-                const userList = npUsers.map((u: any, i: number) => `${i + 1}. ${u.username} (${u.userId})`).join('\n');
+                const userList = npUsers.map((u: any, i: number) => `\`${i + 1}.\` **${u.username}** (\`${u.userId}\`)`).join('\n');
 
-                return interaction.reply({ content: `**No-Prefix Users:**\n${userList}`, ephemeral: true });
+                const embed = new EmbedBuilder()
+                    .setTitle('No-Prefix Users')
+                    .setDescription(userList)
+                    .setColor(Theme.EmbedColor)
+                    .setFooter({ text: `Total: ${npUsers.length} users` })
+                    .setTimestamp();
+                return interaction.reply({ embeds: [embed], ephemeral: true });
             }
         } catch (error: any) {
             console.error('NP command error:', error);
+            const embed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} This feature requires database migration. Please run \`migration.sql\` first.`)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
             return interaction.reply({ 
-                content: `${Emojis.CROSS} This feature requires database migration. Please run \`migration.sql\` first.`, 
+                embeds: [embed], 
                 ephemeral: true 
             });
         }
@@ -98,20 +132,32 @@ export default {
 
     async prefixRun(message: any, args: string[]) {
         if (message.author.id !== OWNER_ID) {
-            return message.reply(`${Emojis.CROSS} This command is owner only.`);
+            const embed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} This command is owner only.`)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return message.channel.send({ embeds: [embed] });
         }
 
         const action = args[0]?.toLowerCase();
 
         if (!action || !['add', 'remove', 'show'].includes(action)) {
-            return message.reply(`${Emojis.CROSS} Usage: \`!np <add|remove|show> [@user]\``);
+            const embed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} **Invalid Usage**\n\`\`\`!np <add|remove|show> [@user]\`\`\``)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return message.channel.send({ embeds: [embed] });
         }
 
         try {
             if (action === 'add') {
                 const user = message.mentions.users.first();
                 if (!user) {
-                    return message.reply(`${Emojis.CROSS} Please mention a user to add.`);
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} Please mention a user to add.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return message.channel.send({ embeds: [embed] });
                 }
 
                 const existing = await (prisma as any).noPrefixUser.findUnique({
@@ -119,7 +165,11 @@ export default {
                 });
 
                 if (existing) {
-                    return message.reply(`${Emojis.CROSS} ${user.tag} is already in the no-prefix list.`);
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} **${user.tag}** is already in the no-prefix list.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return message.channel.send({ embeds: [embed] });
                 }
 
                 await (prisma as any).noPrefixUser.create({
@@ -129,12 +179,20 @@ export default {
                     }
                 });
 
-                return message.reply(`${Emojis.TICK} Added ${user.tag} to no-prefix list.`);
+                const embed = new EmbedBuilder()
+                    .setDescription(`${Emojis.TICK} Successfully added **${user.tag}** to no-prefix list.`)
+                    .setColor(Theme.SuccessColor)
+                    .setTimestamp();
+                return message.channel.send({ embeds: [embed] });
 
             } else if (action === 'remove') {
                 const user = message.mentions.users.first();
                 if (!user) {
-                    return message.reply(`${Emojis.CROSS} Please mention a user to remove.`);
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} Please mention a user to remove.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return message.channel.send({ embeds: [embed] });
                 }
 
                 const existing = await (prisma as any).noPrefixUser.findUnique({
@@ -142,29 +200,51 @@ export default {
                 });
 
                 if (!existing) {
-                    return message.reply(`${Emojis.CROSS} ${user.tag} is not in the no-prefix list.`);
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} **${user.tag}** is not in the no-prefix list.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return message.channel.send({ embeds: [embed] });
                 }
 
                 await (prisma as any).noPrefixUser.delete({
                     where: { userId: user.id }
                 });
 
-                return message.reply(`${Emojis.TICK} Removed ${user.tag} from no-prefix list.`);
+                const embed = new EmbedBuilder()
+                    .setDescription(`${Emojis.TICK} Successfully removed **${user.tag}** from no-prefix list.`)
+                    .setColor(Theme.SuccessColor)
+                    .setTimestamp();
+                return message.channel.send({ embeds: [embed] });
 
             } else if (action === 'show') {
                 const npUsers = await (prisma as any).noPrefixUser.findMany();
 
                 if (npUsers.length === 0) {
-                    return message.reply('No users in the no-prefix list.');
+                    const embed = new EmbedBuilder()
+                        .setDescription(`${Emojis.CROSS} No users in the no-prefix list.`)
+                        .setColor(Theme.ErrorColor)
+                        .setTimestamp();
+                    return message.channel.send({ embeds: [embed] });
                 }
 
-                const userList = npUsers.map((u: any, i: number) => `${i + 1}. ${u.username} (${u.userId})`).join('\n');
+                const userList = npUsers.map((u: any, i: number) => `\`${i + 1}.\` **${u.username}** (\`${u.userId}\`)`).join('\n');
 
-                return message.reply(`**No-Prefix Users:**\n${userList}`);
+                const embed = new EmbedBuilder()
+                    .setTitle('No-Prefix Users')
+                    .setDescription(userList)
+                    .setColor(Theme.EmbedColor)
+                    .setFooter({ text: `Total: ${npUsers.length} users` })
+                    .setTimestamp();
+                return message.channel.send({ embeds: [embed] });
             }
         } catch (error: any) {
             console.error('NP command error:', error);
-            return message.reply(`${Emojis.CROSS} This feature requires database migration. Please run \`migration.sql\` first.`);
+            const embed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} This feature requires database migration. Please run \`migration.sql\` first.`)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return message.channel.send({ embeds: [embed] });
         }
     }
 };
