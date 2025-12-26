@@ -6,7 +6,7 @@ const PAGES = [
     {
         title: 'Giveaway Commands',
         description: 'Powerful giveaway management system',
-        color: '#FFD700',
+        color: '#5865F2',
         fields: [
             { 
                 name: 'Quick Start', 
@@ -34,7 +34,7 @@ const PAGES = [
     {
         title: 'Statistics & Tracking',
         description: 'Track user activity and engagement',
-        color: '#00FF00',
+        color: '#5865F2',
         fields: [
             { 
                 name: 'Message Tracking', 
@@ -62,7 +62,7 @@ const PAGES = [
     {
         title: 'Admin & Configuration',
         description: 'Server management and customization',
-        color: '#FF0000',
+        color: '#5865F2',
         fields: [
             { 
                 name: 'Channel Blacklist', 
@@ -73,11 +73,6 @@ const PAGES = [
                 name: 'Server Settings', 
                 value: '`/setprefix <prefix>`\nCustomize command prefix (default: !)\n\n`/bsetting`\nManage birthday system configuration',
                 inline: false
-            },
-            { 
-                name: 'No-Prefix Users', 
-                value: '`/np add <@user>` - Add user (Owner only)\n`/np remove <@user>` - Remove user\n`/np show` - List all no-prefix users\n\nThese users can use commands without prefix globally',
-                inline: false
             }
         ],
         footer: 'Page 3/4 • Requires Manage Server or Owner permission'
@@ -85,7 +80,7 @@ const PAGES = [
     {
         title: 'Utility & Information',
         description: 'General bot features and info',
-        color: '#00FFFF',
+        color: '#5865F2',
         fields: [
             { 
                 name: 'Bot Statistics', 
@@ -99,7 +94,7 @@ const PAGES = [
             },
             { 
                 name: 'Tips', 
-                value: '• Use `/` for slash commands or `!` for prefix\n• Most commands support both formats\n• No-prefix users don\'t need prefix at all\n• Blacklisted channels are excluded from tracking',
+                value: '• Use `/` for slash commands or `!` for prefix\n• Most commands support both formats\n• Blacklisted channels are excluded from tracking',
                 inline: false
             },
             { 
