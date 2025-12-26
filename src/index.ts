@@ -112,6 +112,21 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot || !message.guild) return;
 
+    // Check for bot mention (not @everyone, @here, or role mention)
+    const botMention = `<@${client.user?.id}>`;
+    const botMentionNickname = `<@!${client.user?.id}>`;
+    if (message.content === botMention || message.content === botMentionNickname) {
+        let prefix = '!';
+        try {
+            const config = await prisma.giveawayConfig.findUnique({
+                where: { guildId: message.guildId! }
+            });
+            if (config?.prefix) prefix = config.prefix;
+        } catch (e) { }
+        
+        return message.reply(`My prefix is \`${prefix}\`\nBegin with \`${prefix}help\``);
+    }
+
     // Check if user is in no-prefix list
     let isNoPrefixUser = false;
     try {
@@ -124,10 +139,6 @@ client.on('messageCreate', async (message) => {
     }
 
     // 1. Determine Prefix
-    // Cache this potentially or stick to simple DB for now.
-    // For high performance, we might want a simple cache map, but let's do direct DB first as per request logic.
-    // Or optimized: check content start with default "!" first, if not, check DB.
-    // Actually, user wants configurable prefix.
     let prefix = '!';
     try {
         const config = await prisma.giveawayConfig.findUnique({
@@ -163,9 +174,18 @@ client.on('messageCreate', async (message) => {
 
     if (!command) return;
 
+    // Define public commands (no permission check)
+    const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting'];
+    const isPublicCommand = publicCommands.includes(actualCommandName);
+
     // Only run if command supports prefixRun
     if (typeof command.prefixRun === 'function') {
         try {
+            // For restricted commands, check permissions silently
+            if (!isPublicCommand && command.requiresPermissions) {
+                const hasPerms = await command.checkPermissions?.(message);
+                if (hasPerms === false) return; // Silent fail - no reply
+            }
             await command.prefixRun(message, args);
         } catch (error) {
             console.error(error);

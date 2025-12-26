@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, TextChannel } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { createGiveawayEmbed } from '../../utils/embeds';
-import { hasGiveawayPermissions } from '../../utils/permissions';
+import { hasGiveawayPermissions, hasGiveawayPermissionsMessage } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
 import { 
     parseDuration, 
@@ -23,6 +23,12 @@ export default {
         .addStringOption(option =>
             option.setName('prize').setDescription('Prize').setRequired(true)),
 
+    requiresPermissions: true,
+    
+    async checkPermissions(message: any): Promise<boolean> {
+        return await hasGiveawayPermissionsMessage(message);
+    },
+
     async execute(interaction: ChatInputCommandInteraction) {
         if (!await hasGiveawayPermissions(interaction)) {
             return interaction.reply({ content: `${Emojis.CROSS} You need Manage Server permissions or the giveaway manager role to start giveaways.`, ephemeral: true });
@@ -40,28 +46,6 @@ export default {
         // !gstart 10m 1 Prize Name
         if (args.length < 3) {
             return message.reply(`${Emojis.CROSS} Usage: \`!gstart <duration> <winners> <prize>\`\nExample: \`!gstart 10m 1 Nitro Classic\``);
-        }
-
-        /* 
-           Permissions check is tricky for prefix if we rely on interaction helpers, 
-           but we can do a basic check here or mock the interaction object if hasGiveawayPermissions supports it.
-           Our hasGiveawayPermissions takes CommandInteraction. We should overload it or just check manually here.
-        */
-        // Manual check for now or cast message member
-        // reusing hasGiveawayPermissions needs modification to accept Message.
-        // Let's do a quick manual check + role check using prisma if needed.
-        // For speed, let's just check ManageGuild here as it's the default, 
-        // OR import prisma and check role.
-
-        // Simulating the permission check:
-        // const hasPerm = message.member.permissions.has(PermissionFlagsBits.ManageGuild);
-        // ... (We should ideally refactor permissions.ts but for now let's stick to ManageGuild + Admin check)
-
-        if (!message.member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
-            // We can check role from DB here if we want full parity, but let's assume ManageGuild for prefix for now to match default behavior or duplicate simple logic.
-            // Actually user requested "manage server" explicitly or same check.
-            // Let's assume ManageGuild is enough for prefix quick start.
-            return message.reply(`${Emojis.CROSS} You need Manage Server permissions.`);
         }
 
         const durationStr = args[0];

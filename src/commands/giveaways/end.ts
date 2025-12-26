@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { GiveawayService } from '../../services/GiveawayService';
-import { hasGiveawayPermissions } from '../../utils/permissions';
+import { hasGiveawayPermissions, hasGiveawayPermissionsMessage } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
 
 export default {
@@ -9,6 +9,12 @@ export default {
         .setDescription('End a giveaway immediately')
         .addStringOption(option =>
             option.setName('message_id').setDescription('Message ID of the giveaway').setRequired(true)),
+
+    requiresPermissions: true,
+    
+    async checkPermissions(message: any): Promise<boolean> {
+        return await hasGiveawayPermissionsMessage(message);
+    },
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (!await hasGiveawayPermissions(interaction)) {
@@ -19,9 +25,6 @@ export default {
     },
 
     async prefixRun(message: any, args: string[]) {
-        if (!message.member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
-            return message.reply(`${Emojis.CROSS} You need Manage Server permissions.`);
-        }
         if (args.length < 1) {
             return message.reply(`${Emojis.CROSS} Usage: \`!gend <message_id>\``);
         }

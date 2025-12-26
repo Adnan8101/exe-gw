@@ -6,19 +6,14 @@ export async function generateCaptcha() {
     const height = 150;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
-
-    // Background
     ctx.fillStyle = '#23272A';
     ctx.fillRect(0, 0, width, height);
-
-    // Random Characters
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No ambiguous characters (I, 1, O, 0)
     let text = '';
     for (let i = 0; i < 6; i++) {
         text += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
-    // Noise (Lines)
     for (let i = 0; i < 20; i++) {
         ctx.strokeStyle = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.5)`;
         ctx.lineWidth = 2;
