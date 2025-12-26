@@ -91,6 +91,36 @@ client.once('ready', async () => {
 
 client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
+        // Check if guild is allowed (except for guildmanage command)
+        if (interaction.guildId && interaction.commandName !== 'guildmanage') {
+            try {
+                const isAllowed = await prisma.allowedGuild.findUnique({
+                    where: { guildId: interaction.guildId }
+                });
+
+                if (!isAllowed) {
+                    const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+                    const embed = new EmbedBuilder()
+                        .setTitle('⛔ Unauthorized Guild')
+                        .setDescription('This guild is not authorized to use me.\n\nContact the developer for more information.')
+                        .setColor(0xFF0000)
+                        .setTimestamp();
+
+                    const row = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setLabel('Join Support Server')
+                                .setStyle(ButtonStyle.Link)
+                                .setURL('https://discord.gg/exeop')
+                        );
+
+                    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+                }
+            } catch (error) {
+                console.error('Error checking guild authorization:', error);
+            }
+        }
+
         const command = commands.get(interaction.commandName);
 
         if (!command) return;
@@ -125,6 +155,40 @@ client.on('messageCreate', async (message) => {
     tracker.onMessageCreate(message);
 
     if (message.author.bot || !message.guild) return;
+
+    // Check if guild is allowed (check early to avoid processing unauthorized guilds)
+    try {
+        const isAllowed = await prisma.allowedGuild.findUnique({
+            where: { guildId: message.guildId! }
+        });
+
+        if (!isAllowed) {
+            // Only respond to direct bot mentions in unauthorized guilds
+            const botMention = `<@${client.user?.id}>`;
+            const botMentionNickname = `<@!${client.user?.id}>`;
+            if (message.content === botMention || message.content === botMentionNickname) {
+                const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+                const embed = new EmbedBuilder()
+                    .setTitle('⛔ Unauthorized Guild')
+                    .setDescription('This guild is not authorized to use me.\n\nContact the developer for more information.')
+                    .setColor(0xFF0000)
+                    .setTimestamp();
+
+                const row = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setLabel('Join Support Server')
+                            .setStyle(ButtonStyle.Link)
+                            .setURL('https://discord.gg/exeop')
+                    );
+
+                return message.reply({ embeds: [embed], components: [row] });
+            }
+            return; // Don't process any commands in unauthorized guilds
+        }
+    } catch (error) {
+        console.error('Error checking guild authorization:', error);
+    }
 
     // Check for bot mention (not @everyone, @here, or role mention)
     const botMention = `<@${client.user?.id}>`;

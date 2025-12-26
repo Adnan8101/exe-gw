@@ -123,3 +123,11 @@ model BlacklistChannel {
 
   @@unique([guildId, channelId, type])
 }
+
+model AllowedGuild {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @unique
+  guildName String
+  addedBy   String
+  createdAt DateTime @default(now())
+}
