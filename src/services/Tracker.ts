@@ -8,8 +8,8 @@ class Tracker {
     private messageCounts: Map<string, Map<string, number>> = new Map(); // guildId -> userId -> count
 
     constructor() {
-        // Start flusher
-        setInterval(() => this.flushMessageCounts(), 5 * 60 * 1000);
+        // Start flusher - flush every 10 seconds for real-time updates
+        setInterval(() => this.flushMessageCounts(), 10 * 1000);
     }
 
     public async onMessageCreate(message: Message) {
@@ -110,6 +110,11 @@ class Tracker {
             }
             userCounts.clear();
         }
+    }
+
+    // Get pending message count for a user (not yet flushed to DB)
+    public getPendingMessageCount(guildId: string, userId: string): number {
+        return this.messageCounts.get(guildId)?.get(userId) || 0;
     }
 }
 

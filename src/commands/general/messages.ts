@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { Theme } from '../../utils/theme';
+import { tracker } from '../../services/Tracker';
 
 const prisma = new PrismaClient();
 
@@ -26,11 +27,13 @@ export default {
             }
         });
 
-        const messageCount = stats?.messageCount || 0;
+        const dbCount = stats?.messageCount || 0;
+        const pendingCount = tracker.getPendingMessageCount(guildId, targetUser.id);
+        const totalCount = dbCount + pendingCount;
 
         const embed = new EmbedBuilder()
             .setTitle('Message Count')
-            .setDescription(`**User:** ${targetUser.tag}\n**Messages:** ${messageCount}`)
+            .setDescription(`**User:** ${targetUser.tag}\n**Messages:** ${totalCount}`)
             .setColor(Theme.EmbedColor)
             .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
@@ -50,16 +53,18 @@ export default {
                 }
             }
         });
-
-        const messageCount = stats?.messageCount || 0;
+        
+        const dbCount = stats?.messageCount || 0;
+        const pendingCount = tracker.getPendingMessageCount(guildId, targetUser.id);
+        const totalCount = dbCount + pendingCount;
 
         const embed = new EmbedBuilder()
             .setTitle('Message Count')
-            .setDescription(`**User:** ${targetUser.tag}\n**Messages:** ${messageCount}`)
+            .setDescription(`**User:** ${targetUser.tag}\n**Messages:** ${totalCount}`)
             .setColor(Theme.EmbedColor)
             .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
-        await message.reply({ embeds: [embed] });
+        await message.channel.send({ embeds: [embed] });
     }
 };
