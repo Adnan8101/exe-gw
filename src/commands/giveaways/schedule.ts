@@ -37,17 +37,13 @@ export default {
         .setName('gschedule')
         .setDescription('Schedule a giveaway for a specific time')
         
-        
-        
+        // Required options
         .addStringOption(option =>
             option.setName('prize').setDescription('Prize to give away').setRequired(true))
         .addIntegerOption(option =>
             option.setName('winners').setDescription('Number of winners').setRequired(true))
         .addStringOption(option =>
             option.setName('duration').setDescription('Duration (e.g. 30s, 1m, 1h)').setRequired(true))
-        
-        
-        
         .addStringOption(option =>
             option.setName('time').setDescription('Start Time (24h format, e.g. 14:30)').setRequired(true))
         .addStringOption(option =>
@@ -55,18 +51,16 @@ export default {
                 .setDescription('Timezone (e.g. Asia/Kolkata, UTC, America/New_York)')
                 .setRequired(true)
                 .setAutocomplete(true))
+        
+        // Optional options
         .addChannelOption(option =>
             option.setName('channel').setDescription('Channel to start the giveaway in'))
-        
-        
         .addBooleanOption(option =>
             option.setName('announce').setDescription('Add announcement message (True/False)'))
         .addStringOption(option =>
             option.setName('announcement').setDescription('Announcement text (if announce is true)'))
         .addStringOption(option =>
             option.setName('announcement_media').setDescription('Media URL for announcement (if announce is true)'))
-
-        
         .addRoleOption(option =>
             option.setName('role_requirement').setDescription('Role required to enter'))
         .addIntegerOption(option =>
