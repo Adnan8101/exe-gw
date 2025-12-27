@@ -1,7 +1,7 @@
 import { Message, EmbedBuilder, ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
-import { createMissingArgsEmbed } from '../../utils/commandHelp';
+import { createMissingArgsEmbed, createCommandHelpEmbed } from '../../utils/commandHelp';
 import { canModerate, createModCase, createModEmbed, hasModPermission } from '../../utils/moderationUtils';
 import { prisma } from '../../utils/database';
 
@@ -73,9 +73,14 @@ export default {
 
   
   async _sharedLogic(message: Message, args: string[]) {
-    // Validate required arguments
+    // Validate required arguments - show help embed if missing
     if (args.length < 1) {
-      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+      const commandData = {
+        name: 'warn',
+        description: 'Warn a member',
+        metadata: this.metadata
+      };
+      return message.reply({ embeds: [createMissingArgsEmbed(commandData, 'user')] });
     }
 
  if (!message.guild || !message.member) return;

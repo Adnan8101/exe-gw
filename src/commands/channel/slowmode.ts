@@ -1,7 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, ChannelType, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
-import { createMissingArgsEmbed } from '../../utils/commandHelp';
+import { createMissingArgsEmbed, createCommandHelpEmbed } from '../../utils/commandHelp';
 
 function parseTime(time: string): number | null {
   const regex = /^(\d+)([smh])$/;
@@ -104,9 +104,14 @@ export default {
   
   
   async _sharedLogic(message: Message, args: string[]) {
-    // Validate required arguments
+    // Validate required arguments - show help embed if missing
     if (args.length < 1) {
-      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'seconds')] });
+      const commandData = {
+        name: 'slowmode',
+        description: 'Set or remove slowmode in a channel',
+        metadata: this.metadata
+      };
+      return message.reply({ embeds: [createMissingArgsEmbed(commandData, 'seconds')] });
     }
 
     if (!message.guild || !message.member) return;

@@ -1,10 +1,10 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
-import { createMissingArgsEmbed } from '../../utils/commandHelp';
+import { createCommandHelpEmbed } from '../../utils/commandHelp';
 import { hasManageRolesPermission, parseDuration, formatDuration } from '../../utils/moderationUtils';
 import { prisma } from '../../utils/database';
-
+import { findRoleByName } from '../../utils/fuzzyMatch';
 
 
 export default {
@@ -73,9 +73,14 @@ export default {
 
   
   async _sharedLogic(message: Message, args: string[]) {
-    // Validate required arguments
+    // Validate required arguments - show help embed
     if (args.length < 3) {
-      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user, role, and duration')] });
+      const commandData = {
+        name: 'temprole',
+        description: 'Give a member a temporary role',
+        metadata: this.metadata
+      };
+      return message.reply({ embeds: [createCommandHelpEmbed(commandData)] });
     }
 
  if (!message.guild || !message.member) return;
@@ -104,14 +109,21 @@ export default {
  ]});
  }
 
+ // Try to get role from mention, ID, or fuzzy match by name
  const roleMention = message.mentions.roles.first();
  const roleId = args[1]?.replace(/[<@&>]/g, '');
- const role = roleMention || message.guild.roles.cache.get(roleId!);
+ let role = roleMention || message.guild.roles.cache.get(roleId!);
+
+ // If not found, try fuzzy matching with the role name
+ if (!role) {
+   const roleName = args.slice(1, -1).join(' '); // Exclude last arg which is duration
+   role = findRoleByName(message.guild!, roleName);
+ }
 
  if (!role) {
  return message.reply({ embeds: [new EmbedBuilder()
  .setColor(Theme.ErrorColor)
- .setDescription(' Please provide a valid role.')
+ .setDescription(`${Emojis.CROSS} Could not find role. Please provide a valid role mention, ID, or name.`)
  ]});
  }
 

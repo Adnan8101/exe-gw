@@ -1,8 +1,9 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, Role, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
-import { createMissingArgsEmbed } from '../../utils/commandHelp';
+import { createMissingArgsEmbed, createCommandHelpEmbed } from '../../utils/commandHelp';
 import { canModerate, hasManageRolesPermission } from '../../utils/moderationUtils';
+import { findRoleByName } from '../../utils/fuzzyMatch';
 
 
 
@@ -89,9 +90,14 @@ export default {
   
   
   async _sharedLogic(message: Message, args: string[]) {
-    // Validate required arguments
-    if (args.length < 2) {
-      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'action and role')] });
+    // Validate required arguments - show help embed if missing
+    if (args.length < 1) {
+      const commandData = {
+        name: 'role',
+        description: 'Manage roles for members',
+        metadata: this.metadata
+      };
+      return message.reply({ embeds: [createCommandHelpEmbed(commandData)] });
     }
 
  if (!message.guild || !message.member) return;
@@ -114,9 +120,9 @@ export default {
 
  switch (subcommand) {
  case 'add':
- return handleRoleAdd(message, args);
+ return handleRoleAdd(message, args, this.metadata);
  case 'remove':
- return handleRoleRemove(message, args);
+ return handleRoleRemove(message, args, this.metadata);
  case 'list':
  return handleRoleList(message, args);
  case 'info':
@@ -130,27 +136,49 @@ export default {
   }
 };
 
-async function handleRoleAdd(message: Message, args: string[]) {
+async function handleRoleAdd(message: Message, args: string[], metadata: any) {
+  // Check if required arguments are provided - show help embed
+  if (args.length < 3) {
+    const commandData = {
+      name: 'role add',
+      description: 'Add a role to a member',
+      metadata: {
+        syntax: '!role add <user> <role>',
+        example: '!role add @User Memer',
+        permissions: 'Manage Roles',
+        category: 'Role Management'
+      }
+    };
+    return message.reply({ embeds: [createMissingArgsEmbed(commandData, 'user and role')] });
+  }
+
   const targetMember = message.mentions.members?.first() || 
     await message.guild!.members.fetch(args[1]).catch(() => null);
 
   if (!targetMember) {
     return message.reply({ embeds: [new EmbedBuilder()
       .setColor(Theme.ErrorColor)
-      .setDescription(' Please mention a valid member.')
+      .setDescription(`${Emojis.CROSS} Please mention a valid member.`)
     ]});
   }
 
+  // Try to get role from mention, ID, or fuzzy match by name
   const roleMention = message.mentions.roles.first();
- const roleId = args[2]?.replace(/[<@&>]/g, '');
- const role = roleMention || message.guild!.roles.cache.get(roleId!);
+  const roleId = args[2]?.replace(/[<@&>]/g, '');
+  let role = roleMention || message.guild!.roles.cache.get(roleId!);
 
- if (!role) {
- return message.reply({ embeds: [new EmbedBuilder()
- .setColor(Theme.ErrorColor)
- .setDescription(' Please provide a valid role.')
- ]});
- }
+  // If not found, try fuzzy matching with the role name
+  if (!role) {
+    const roleName = args.slice(2).join(' ');
+    role = findRoleByName(message.guild!, roleName);
+  }
+
+  if (!role) {
+    return message.reply({ embeds: [new EmbedBuilder()
+      .setColor(Theme.ErrorColor)
+      .setDescription(`${Emojis.CROSS} Could not find role. Please provide a valid role mention, ID, or name.`)
+    ]});
+  }
 
  if (role.position >= message.guild!.members.me!.roles.highest.position) {
  return message.reply({ embeds: [new EmbedBuilder()
@@ -191,27 +219,49 @@ async function handleRoleAdd(message: Message, args: string[]) {
  }
 }
 
-async function handleRoleRemove(message: Message, args: string[]) {
- const targetMember = message.mentions.members?.first() || 
- await message.guild!.members.fetch(args[1]).catch(() => null);
+async function handleRoleRemove(message: Message, args: string[], metadata: any) {
+  // Check if required arguments are provided - show help embed
+  if (args.length < 3) {
+    const commandData = {
+      name: 'role remove',
+      description: 'Remove a role from a member',
+      metadata: {
+        syntax: '!role remove <user> <role>',
+        example: '!role remove @User Memer',
+        permissions: 'Manage Roles',
+        category: 'Role Management'
+      }
+    };
+    return message.reply({ embeds: [createMissingArgsEmbed(commandData, 'user and role')] });
+  }
 
- if (!targetMember) {
- return message.reply({ embeds: [new EmbedBuilder()
- .setColor(Theme.ErrorColor)
- .setDescription(' Please mention a valid member.')
- ]});
- }
+  const targetMember = message.mentions.members?.first() || 
+    await message.guild!.members.fetch(args[1]).catch(() => null);
 
- const roleMention = message.mentions.roles.first();
- const roleId = args[2]?.replace(/[<@&>]/g, '');
- const role = roleMention || message.guild!.roles.cache.get(roleId!);
+  if (!targetMember) {
+    return message.reply({ embeds: [new EmbedBuilder()
+      .setColor(Theme.ErrorColor)
+      .setDescription(`${Emojis.CROSS} Please mention a valid member.`)
+    ]});
+  }
 
- if (!role) {
- return message.reply({ embeds: [new EmbedBuilder()
- .setColor(Theme.ErrorColor)
- .setDescription(' Please provide a valid role.')
- ]});
- }
+  // Try to get role from mention, ID, or fuzzy match by name
+  const roleMention = message.mentions.roles.first();
+  const roleId = args[2]?.replace(/[<@&>]/g, '');
+  let role = roleMention || message.guild!.roles.cache.get(roleId!);
+
+  // If not found, try fuzzy matching with the role name
+  if (!role) {
+    const roleName = args.slice(2).join(' ');
+    role = findRoleByName(message.guild!, roleName);
+  }
+
+  if (!role) {
+    return message.reply({ embeds: [new EmbedBuilder()
+      .setColor(Theme.ErrorColor)
+      .setDescription(`${Emojis.CROSS} Could not find role. Please provide a valid role mention, ID, or name.`)
+    ]});
+  }
 
  if (role.position >= message.guild!.members.me!.roles.highest.position) {
  return message.reply({ embeds: [new EmbedBuilder()

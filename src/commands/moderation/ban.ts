@@ -2,7 +2,7 @@ import { Message, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChatIn
 import { canModerate, createModCase, createModEmbed, createDMEmbed, hasBanPermission } from '../../utils/moderationUtils';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
-import { createMissingArgsEmbed } from '../../utils/commandHelp';
+import { createMissingArgsEmbed, createCommandHelpEmbed } from '../../utils/commandHelp';
 
 export default {
  data: new SlashCommandBuilder()
@@ -72,9 +72,14 @@ export default {
   
   
   async _sharedLogic(message: Message, args: string[]) {
-    // Validate required arguments
+    // Validate required arguments - show help embed if missing
     if (args.length < 1) {
-      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+      const commandData = {
+        name: 'ban',
+        description: 'Ban a member from the server',
+        metadata: this.metadata
+      };
+      return message.reply({ embeds: [createMissingArgsEmbed(commandData, 'user')] });
     }
 
  if (!message.guild || !message.member) return;

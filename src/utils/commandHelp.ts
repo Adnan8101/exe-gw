@@ -40,10 +40,31 @@ export function createMissingArgsEmbed(commandData: CommandData, missingArg: str
 
   if (commandData.metadata) {
     embed.addFields(
-      { name: '📝 Correct Usage', value: `\`${commandData.metadata.syntax}\``, inline: false },
-      { name: '💡 Example', value: `\`${commandData.metadata.example}\``, inline: false }
+      { name: 'Syntax', value: `\`${commandData.metadata.syntax}\``, inline: false },
+      { name: 'Example', value: `\`${commandData.metadata.example}\``, inline: false }
     );
   }
+
+  return embed;
+}
+
+export function createCommandHelpEmbed(commandData: CommandData) {
+  const embed = new EmbedBuilder()
+    .setColor(Theme.PrimaryColor)
+    .setTitle(`Command: ${commandData.name}`)
+    .setDescription(commandData.description);
+
+  if (commandData.metadata) {
+    embed.addFields(
+      { name: 'Syntax', value: `\`${commandData.metadata.syntax}\``, inline: false },
+      { name: 'Example', value: `\`${commandData.metadata.example}\``, inline: false },
+      { name: 'Permission', value: commandData.metadata.permissions, inline: true },
+      { name: 'Category', value: commandData.metadata.category, inline: true }
+    );
+  }
+
+  embed.setFooter({ text: 'Use !help to see all commands' });
+  embed.setTimestamp();
 
   return embed;
 }

@@ -1,10 +1,10 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
-import { createMissingArgsEmbed } from '../../utils/commandHelp';
+import { createCommandHelpEmbed } from '../../utils/commandHelp';
 import { hasManageRolesPermission } from '../../utils/moderationUtils';
 import { prisma } from '../../utils/database';
-
+import { findRoleByName } from '../../utils/fuzzyMatch';
 
 
 export default {
@@ -87,9 +87,14 @@ export default {
   
   
   async _sharedLogic(message: Message, args: string[]) {
-    // Validate required arguments
+    // Validate required arguments - show help embed
     if (args.length < 1) {
-      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'action')] });
+      const commandData = {
+        name: 'rolelock',
+        description: 'Lock or unlock roles',
+        metadata: this.metadata
+      };
+      return message.reply({ embeds: [createCommandHelpEmbed(commandData)] });
     }
 
  if (!message.guild || !message.member) return;
@@ -105,9 +110,9 @@ export default {
 
  switch (subcommand) {
  case 'lock':
- return handleRoleLock(message, args);
+ return handleRoleLock(message, args, this.metadata);
  case 'unlock':
- return handleRoleUnlock(message, args);
+ return handleRoleUnlock(message, args, this.metadata);
  case 'show':
  return handleRoleLockShow(message);
  default:
@@ -119,15 +124,32 @@ export default {
   }
 };
 
-async function handleRoleLock(message: Message, args: string[]) {
+async function handleRoleLock(message: Message, args: string[], metadata: any) {
+  // Validate required arguments - show help embed
+  if (args.length < 2) {
+    const commandData = {
+      name: 'rolelock lock',
+      description: 'Lock a role to specific users',
+      metadata
+    };
+    return message.reply({ embeds: [createCommandHelpEmbed(commandData)] });
+  }
+
+  // Try to get role from mention, ID, or fuzzy match by name
   const roleMention = message.mentions.roles.first();
   const roleId = args[1]?.replace(/[<@&>]/g, '');
-  const role = roleMention || message.guild!.roles.cache.get(roleId!);
+  let role = roleMention || message.guild!.roles.cache.get(roleId!);
+
+  // If not found, try fuzzy matching with the role name
+  if (!role) {
+    const roleName = args.slice(1).join(' ');
+    role = findRoleByName(message.guild!, roleName);
+  }
 
   if (!role) {
     return message.reply({ embeds: [new EmbedBuilder()
       .setColor(Theme.ErrorColor)
-      .setDescription(' Please provide a valid role.')
+      .setDescription(`${Emojis.CROSS} Could not find role. Please provide a valid role mention, ID, or name.`)
     ]});
   }
 
@@ -164,15 +186,32 @@ async function handleRoleLock(message: Message, args: string[]) {
  await message.reply({ embeds: [embed] });
 }
 
-async function handleRoleUnlock(message: Message, args: string[]) {
+async function handleRoleUnlock(message: Message, args: string[], metadata: any) {
+  // Validate required arguments - show help embed
+  if (args.length < 2) {
+    const commandData = {
+      name: 'rolelock unlock',
+      description: 'Unlock a role',
+      metadata
+    };
+    return message.reply({ embeds: [createCommandHelpEmbed(commandData)] });
+  }
+
+ // Try to get role from mention, ID, or fuzzy match by name
  const roleMention = message.mentions.roles.first();
  const roleId = args[1]?.replace(/[<@&>]/g, '');
- const role = roleMention || message.guild!.roles.cache.get(roleId!);
+ let role = roleMention || message.guild!.roles.cache.get(roleId!);
+
+ // If not found, try fuzzy matching with the role name
+ if (!role) {
+   const roleName = args.slice(1).join(' ');
+   role = findRoleByName(message.guild!, roleName);
+ }
 
  if (!role) {
  return message.reply({ embeds: [new EmbedBuilder()
  .setColor(Theme.ErrorColor)
- .setDescription(' Please provide a valid role.')
+ .setDescription(`${Emojis.CROSS} Could not find role. Please provide a valid role mention, ID, or name.`)
  ]});
  }
 
