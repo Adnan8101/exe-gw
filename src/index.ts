@@ -98,59 +98,57 @@ const OWNER_ID = '929297205796417597';
 
 client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
-        
-        if (interaction.guildId && interaction.commandName !== 'guildmanage' && interaction.user.id !== OWNER_ID) {
-            try {
-                const isAllowed = await prisma.allowedGuild.findUnique({
-                    where: { guildId: interaction.guildId }
-                });
+        // Perform all checks in parallel for speed
+        const giveawayCommands = ['gstart', 'gcreate', 'gend', 'gcancel', 'gstop', 'gresume', 'greroll', 'gdelete', 'glist', 'ghistory', 'grefresh', 'gschedule'];
+        const isGiveawayCommand = giveawayCommands.includes(interaction.commandName);
+        const needsGuildCheck = interaction.guildId && interaction.commandName !== 'guildmanage' && interaction.user.id !== OWNER_ID;
+        const needsIgnoreCheck = !isGiveawayCommand && interaction.channelId && interaction.guildId;
 
-                if (!isAllowed) {
-                    const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-                    const embed = new EmbedBuilder()
-                        .setTitle('⛔ Unauthorized Guild')
-                        .setDescription('This guild is not authorized to use me.\n\nContact the developer for more information.')
-                        .setColor(0xFF0000)
-                        .setTimestamp();
-
-                    const row = new ActionRowBuilder()
-                        .addComponents(
-                            new ButtonBuilder()
-                                .setLabel('Join Support Server')
-                                .setStyle(ButtonStyle.Link)
-                                .setURL('https://discord.gg/exeop')
-                        );
-
-                    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
-                }
-            } catch (error) {
-                console.error('Error checking guild authorization:', error);
-            }
-        }
-
-        // Check if channel is ignored (except for giveaway commands)
-        if (interaction.channelId && interaction.guildId) {
-            const giveawayCommands = ['gstart', 'gcreate', 'gend', 'gcancel', 'gstop', 'gresume', 'greroll', 'gdelete', 'glist', 'ghistory', 'grefresh', 'gschedule'];
-            const isGiveawayCommand = giveawayCommands.includes(interaction.commandName);
-            
-            if (!isGiveawayCommand) {
-                try {
-                    const isIgnored = await prisma.ignoredChannel.findUnique({
-                        where: {
-                            guildId_channelId: {
-                                guildId: interaction.guildId,
-                                channelId: interaction.channelId
-                            }
+        try {
+            const checks = await Promise.all([
+                // Check if channel is ignored
+                needsIgnoreCheck ? prisma.ignoredChannel.findUnique({
+                    where: {
+                        guildId_channelId: {
+                            guildId: interaction.guildId!,
+                            channelId: interaction.channelId!
                         }
-                    });
-
-                    if (isIgnored) {
-                        return; // Silently ignore the command
                     }
-                } catch (error) {
-                    console.error('Error checking ignored channel:', error);
-                }
+                }) : Promise.resolve(null),
+                // Check if guild is allowed
+                needsGuildCheck ? prisma.allowedGuild.findUnique({
+                    where: { guildId: interaction.guildId! }
+                }) : Promise.resolve(true)
+            ]);
+
+            const [isIgnored, isAllowed] = checks;
+
+            // If channel is ignored, silently return
+            if (isIgnored) {
+                return;
             }
+
+            // If guild not allowed, send error
+            if (needsGuildCheck && !isAllowed) {
+                const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+                const embed = new EmbedBuilder()
+                    .setTitle('⛔ Unauthorized Guild')
+                    .setDescription('This guild is not authorized to use me.\n\nContact the developer for more information.')
+                    .setColor(0xFF0000)
+                    .setTimestamp();
+
+                const row = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setLabel('Join Support Server')
+                            .setStyle(ButtonStyle.Link)
+                            .setURL('https://discord.gg/exeop')
+                    );
+
+                return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+            }
+        } catch (error) {
+            console.error('Error performing interaction checks:', error);
         }
 
         const command = commands.get(interaction.commandName);
@@ -192,10 +190,16 @@ client.on('interactionCreate', async interaction => {
                 errorMessage = `❌ Error: ${error.message}`;
             }
             
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: errorMessage, ephemeral: true });
-            } else {
-                await interaction.reply({ content: errorMessage, ephemeral: true });
+            try {
+                if (interaction.replied) {
+                    await interaction.followUp({ content: errorMessage, ephemeral: true });
+                } else if (interaction.deferred) {
+                    await interaction.editReply({ content: errorMessage });
+                } else {
+                    await interaction.reply({ content: errorMessage, ephemeral: true });
+                }
+            } catch (e) {
+                console.error('Failed to send error message:', e);
             }
         }
     } else if (interaction.isAutocomplete()) {
