@@ -79,7 +79,7 @@ async function handleRoleAdd(message: Message, args: string[]) {
  ]});
  }
 
- if (role.position >= message.member!.roles.highest.position && message.guild!.ownerId !== message.author.id) {
+ if (role.position >= message.member!.roles.highest.position && message.guild?.ownerId !== message.author.id) {
  return message.reply({ embeds: [new EmbedBuilder()
  .setColor(Theme.ErrorColor)
  .setDescription(`${Emojis.CROSS} You cannot manage this role (higher or equal to your highest role)`)
@@ -141,7 +141,7 @@ async function handleRoleRemove(message: Message, args: string[]) {
  ]});
  }
 
- if (role.position >= message.member!.roles.highest.position && message.guild!.ownerId !== message.author.id) {
+ if (role.position >= message.member!.roles.highest.position && message.guild?.ownerId !== message.author.id) {
  return message.reply({ embeds: [new EmbedBuilder()
  .setColor(Theme.ErrorColor)
  .setDescription(`${Emojis.CROSS} You cannot manage this role (higher or equal to your highest role)`)
