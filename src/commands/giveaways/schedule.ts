@@ -57,6 +57,14 @@ export default {
                 .setAutocomplete(true))
         .addChannelOption(option =>
             option.setName('channel').setDescription('Channel to start the giveaway in'))
+        
+        
+        .addBooleanOption(option =>
+            option.setName('announce').setDescription('Add announcement message (True/False)'))
+        .addStringOption(option =>
+            option.setName('announcement').setDescription('Announcement text (if announce is true)'))
+        .addStringOption(option =>
+            option.setName('announcement_media').setDescription('Media URL for announcement (if announce is true)'))
 
         
         .addRoleOption(option =>
@@ -76,13 +84,7 @@ export default {
         .addStringOption(option =>
             option.setName('custom_emoji').setDescription('Custom emoji'))
         .addUserOption(option =>
-            option.setName('birthday_user').setDescription('User to wish happy birthday to'))
-        .addBooleanOption(option =>
-            option.setName('announce').setDescription('Add announcement message (True/False)'))
-        .addStringOption(option =>
-            option.setName('announcement').setDescription('Announcement text (if announce is true)'))
-        .addStringOption(option =>
-            option.setName('announcement_media').setDescription('Media URL for announcement (if announce is true)')),
+            option.setName('birthday_user').setDescription('User to wish happy birthday to')),
 
     async autocomplete(interaction: AutocompleteInteraction) {
         const focusedValue = interaction.options.getFocused();
@@ -197,8 +199,8 @@ export default {
                 thumbnail: opts.thumbnail || null,
                 emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
                 birthdayUser: opts.birthdayUser || null,
-                announcement: opts.announcement || null,
-                announcementMedia: opts.announcementMedia || null
+                announcement: opts.announce ? (opts.announcement || null) : null,
+                announcementMedia: opts.announce ? (opts.announcementMedia || null) : null
             };
 
             await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
