@@ -1,4 +1,5 @@
 import { prisma } from './utils/database';
+import { Emojis } from './utils/emojis';
 
 import { Client, GatewayIntentBits, Collection, EmbedBuilder } from 'discord.js';
 import { GiveawayService } from './services/GiveawayService';
@@ -99,7 +100,7 @@ client.once('ready', async () => {
             console.log(`✅ /gschedule command has ${options.length} options`);
         }
     } catch (error) {
-        console.error("❌ Error registering commands:", error);
+        console.error("${Emojis.CROSS} Error registering commands:", error);
     }
 
     
@@ -170,7 +171,7 @@ client.on('interactionCreate', async interaction => {
             const allCommands = Array.from(commands.keys());
             const suggestions = getSimilarCommands(interaction.commandName, allCommands);
             
-            let message = `❌ No command found \`${interaction.commandName}\``;
+            let message = `${Emojis.CROSS} No command found \`${interaction.commandName}\``;
             
             if (suggestions.length > 0) {
                 message += '\n\n**Did you mean?**\n' + suggestions.map(cmd => `• \`/${cmd}\``).join('\n');
@@ -188,19 +189,19 @@ client.on('interactionCreate', async interaction => {
         } catch (error: any) {
             console.error(error);
             
-            let errorMessage = '❌ An unexpected error occurred while executing this command.';
+            let errorMessage = '${Emojis.CROSS} An unexpected error occurred while executing this command.';
             if (error.code === 50013) {
-                errorMessage = '❌ I don\'t have the required permissions to perform this action. Please check my role hierarchy and permissions.';
+                errorMessage = '${Emojis.CROSS} I don\'t have the required permissions to perform this action. Please check my role hierarchy and permissions.';
             } else if (error.code === 50001) {
-                errorMessage = '❌ I don\'t have access to the required channel.';
+                errorMessage = '${Emojis.CROSS} I don\'t have access to the required channel.';
             } else if (error.code === 10008) {
-                errorMessage = '❌ The message was not found or has been deleted.';
+                errorMessage = '${Emojis.CROSS} The message was not found or has been deleted.';
             } else if (error.code === 10007) {
-                errorMessage = '❌ The specified member was not found in this server.';
+                errorMessage = '${Emojis.CROSS} The specified member was not found in this server.';
             } else if (error.code === 50035) {
-                errorMessage = '❌ Invalid form body. Please check your input values.';
+                errorMessage = '${Emojis.CROSS} Invalid form body. Please check your input values.';
             } else if (error.message) {
-                errorMessage = `❌ Error: ${error.message}`;
+                errorMessage = `${Emojis.CROSS} Error: ${error.message}`;
             }
             
             try {
@@ -381,17 +382,17 @@ client.on('messageCreate', async (message) => {
         } catch (error: any) {
             console.error(error);
             
-            let errorMessage = '❌ An unexpected error occurred.';
+            let errorMessage = '${Emojis.CROSS} An unexpected error occurred.';
             if (error.code === 50013) {
-                errorMessage = '❌ I don\'t have the required permissions to perform this action.';
+                errorMessage = '${Emojis.CROSS} I don\'t have the required permissions to perform this action.';
             } else if (error.code === 50001) {
-                errorMessage = '❌ I don\'t have access to the required channel.';
+                errorMessage = '${Emojis.CROSS} I don\'t have access to the required channel.';
             } else if (error.code === 10008) {
-                errorMessage = '❌ The message was not found or has been deleted.';
+                errorMessage = '${Emojis.CROSS} The message was not found or has been deleted.';
             } else if (error.code === 10007) {
-                errorMessage = '❌ The specified member was not found.';
+                errorMessage = '${Emojis.CROSS} The specified member was not found.';
             } else if (error.message) {
-                errorMessage = `❌ Error: ${error.message}`;
+                errorMessage = `${Emojis.CROSS} Error: ${error.message}`;
             }
             await message.reply(errorMessage);
         }

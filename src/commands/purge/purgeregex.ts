@@ -16,7 +16,7 @@ export default {
     example: '!purgeregex "spam" 50',
     permissions: 'Manage Messages',
     category: 'Purge'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {

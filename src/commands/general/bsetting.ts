@@ -191,7 +191,7 @@ export default {
                 .addComponents(
                     new ButtonBuilder().setCustomId('save_msg').setLabel('Save').setStyle(ButtonStyle.Secondary).setEmoji('💾'),
                     new ButtonBuilder().setCustomId('edit_msg').setLabel('Edit').setStyle(ButtonStyle.Secondary).setEmoji('✏️'),
-                    new ButtonBuilder().setCustomId('cancel_msg').setLabel('Cancel').setStyle(ButtonStyle.Secondary).setEmoji('❌')
+                    new ButtonBuilder().setCustomId('cancel_msg').setLabel('Cancel').setStyle(ButtonStyle.Secondary).setEmoji('${Emojis.CROSS}')
                 );
 
             const previewMsg = await i.editReply({ embeds: [previewEmbed], components: [row] });
@@ -213,7 +213,7 @@ export default {
                     await selection.update({ content: `${Emojis.CROSS} **Cancelled.**`, embeds: [], components: [] });
                 }
             } catch (e) {
-                await i.editReply({ content: '❌ Timed out.', components: [] });
+                await i.editReply({ content: '${Emojis.CROSS} Timed out.', components: [] });
             }
         });
     }

@@ -86,7 +86,7 @@ export default {
     example: '!cleanup all',
     permissions: 'Manage Messages',
     category: 'Purge'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {

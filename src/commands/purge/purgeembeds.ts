@@ -15,7 +15,7 @@ export default {
     example: '!purgeembeds 30',
     permissions: 'Manage Messages',
     category: 'Purge'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {

@@ -18,7 +18,7 @@ export default {
     example: '!untimeout @User',
     permissions: 'Moderate Members',
     category: 'Moderation'
-  }
+  },
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];

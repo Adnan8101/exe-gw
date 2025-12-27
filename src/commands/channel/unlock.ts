@@ -16,9 +16,9 @@ export default {
     example: '!unlock #general',
     permissions: 'Manage Channels',
     category: 'Channel Management'
-  }
+  },
 
- async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
     
     // Parse slash command options

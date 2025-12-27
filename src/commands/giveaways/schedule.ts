@@ -315,7 +315,7 @@ export default {
                     .setCustomId('cancel_announcement')
                     .setLabel('Cancel')
                     .setStyle(ButtonStyle.Danger)
-                    .setEmoji('❌')
+                    .setEmoji('${Emojis.CROSS}')
             );
 
         const previewMsg = await ctx.editReply({ embeds: [previewEmbed], components: [row] });

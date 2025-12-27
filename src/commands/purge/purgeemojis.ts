@@ -15,7 +15,7 @@ export default {
     example: '!purgeemojis 20',
     permissions: 'Manage Messages',
     category: 'Purge'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {

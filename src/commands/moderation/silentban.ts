@@ -18,9 +18,9 @@ export default {
     example: '!silentban @User No DM notification',
     permissions: 'Ban Members',
     category: 'Moderation'
-  }
+  },
 
- async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
     
     // Parse slash command options

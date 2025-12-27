@@ -18,7 +18,7 @@ export default {
     example: '!timeout @User 1h Spamming',
     permissions: 'Moderate Members',
     category: 'Moderation'
-  }
+  },
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];

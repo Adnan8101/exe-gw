@@ -15,7 +15,7 @@ export default {
     example: '!purgelinks 40',
     permissions: 'Manage Messages',
     category: 'Purge'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {

@@ -1,271 +1,238 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Message } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import * as fs from 'fs';
+import * as path from 'path';
 
-const PAGES = [
-    {
-        title: 'Giveaway Commands',
-        description: 'Powerful giveaway management system',
-        color: '#FFD700',
-        fields: [
-            { 
-                name: 'Quick Start', 
-                value: '`/gstart <prize> <winners> <duration>`\nExample: `/gstart "Nitro" 1 10m`\n\nStart a giveaway instantly with just 3 parameters!',
-                inline: false
-            },
-            { 
-                name: 'Advanced Creation', 
-                value: '`/gcreate <prize> <winners> <duration> [options...]`\n\nAdd requirements, roles, captcha, and more customization options',
-                inline: false
-            },
-            { 
-                name: 'Management', 
-                value: '`/gend <id>` - End giveaway immediately\n`/gcancel <id>` - Cancel and delete giveaway\n`/gstop <id>` - Pause giveaway countdown\n`/gresume <id>` - Resume paused giveaway\n`/greroll <id>` - Pick new winners\n`/gdelete <id>` - Delete giveaway from database',
-                inline: false
-            },
-            { 
-                name: 'Organization', 
-                value: '`/glist` - View all active giveaways\n`/ghistory` - Complete history with export\n`/grefresh` - Update giveaway embeds\n`/gschedule` - Schedule future giveaways with timezone support',
-                inline: false
-            }
-        ],
-        footer: 'Page 1/5 • Requires Manage Server permission'
-    },
-    {
-        title: 'Statistics & Tracking',
-        description: 'Track user activity and engagement',
-        color: '#FFD700',
-        fields: [
-            { 
-                name: 'Message Tracking', 
-                value: '`/messages [@user]` or `!m [@user]`\nView total messages sent by a user\n\n`/lb -m` or `!lb -m`\nTop 10 message leaderboard with medals',
-                inline: false
-            },
-            { 
-                name: 'Voice Tracking', 
-                value: '`/vc [@user]`\nCheck voice channel time statistics\n\n`/lb -v` or `!lb -vc`\nTop 10 voice time leaderboard',
-                inline: false
-            },
-            { 
-                name: 'Invite Tracking', 
-                value: '`/invites [@user]` or `!i [@user]`\nView user invite statistics\n\n`/lb -i` or `!lb -i`\nTop 10 invite leaderboard',
-                inline: false
-            },
-            { 
-                name: 'Real-time Updates', 
-                value: 'All statistics update every 10-30 seconds\nSupports mentions, user IDs, and usernames',
-                inline: false
-            }
-        ],
-        footer: 'Page 2/5 • Automatic tracking for all members'
-    },
-    {
-        title: 'Admin & Configuration',
-        description: 'Server management and customization',
-        color: '#FFD700',
-        fields: [
-            { 
-                name: 'Stats Management', 
-                value: '`/add_messages <@user> <amount>`\nAdd messages to a user\n\n`/add_invites <@user> <amount>`\nAdd invites to a user\n\n`/add_vc <@user> <minutes>`\nAdd voice time to a user\n\n`/reset_user_messages` | `/reset_all_messages`\n`/reset_user_invites` | `/reset_all_invites`\n`/reset_user_vc` | `/reset_all_vc`',
-                inline: false
-            },
-            { 
-                name: 'Channel Management', 
-                value: '`/ignore_channel add <#channel>`\nIgnore non-giveaway commands in channel\n\n`/ignore_channel remove <#channel>`\nStop ignoring channel\n\n`/ignore_channel show`\nView all ignored channels',
-                inline: false
-            },
-            { 
-                name: 'Channel Blacklist', 
-                value: '`/blacklist add <message|voice> <#channel>`\nStop tracking in specific channels\n\n`/blacklist remove <message|voice> <#channel>`\nResume tracking in channels\n\n`/blacklist show [type]`\nView all blacklisted channels',
-                inline: false
-            },
-            { 
-                name: 'Server Settings', 
-                value: '`/setprefix <prefix>`\nCustomize command prefix (default: !)\n\n`/bsetting`\nManage birthday system configuration',
-                inline: false
-            }
-        ],
-        footer: 'Page 3/5 • Requires Manage Server or Owner permission'
-    },
-    {
-        title: 'User Self-Reset Commands',
-        description: 'Manage your own statistics',
-        color: '#FFD700',
-        fields: [
-            { 
-                name: 'Reset Your Stats', 
-                value: '`/reset_my_messages`\nReset your message count to 0\n\n`/reset_my_invites`\nReset your invite count to 0\n\n`/reset_my_vc`\nReset your voice time to 0\n\nThese commands are permanent and cannot be undone!',
-                inline: false
-            }
-        ],
-        footer: 'Page 4/5 • Anyone can use these commands'
-    },
-    {
-        title: 'Utility & Information',
-        description: 'General bot features and info',
-        color: '#FFD700',
-        fields: [
-            { 
-                name: 'Bot Statistics', 
-                value: '`/gstats`\nDetailed bot performance and usage stats\n\n`/gping`\nCheck bot latency and response time',
-                inline: false
-            },
-            { 
-                name: 'Links & Info', 
-                value: '`/ginvite`\nGet bot invite link with permissions\n\n`/gabout`\nBot information and credits\n\n`/ghelp`\nView this help menu',
-                inline: false
-            },
-            { 
-                name: 'Tips', 
-                value: '• Use `/` for slash commands or `!` for prefix\n• Most commands support both formats\n• Blacklisted channels are excluded from tracking',
-                inline: false
-            },
-            { 
-                name: 'Support', 
-                value: '[Support Server](https://discord.gg/exe) • [Documentation](https://docs.exe.team)',
-                inline: false
-            }
-        ],
-        footer: 'Page 5/5 • Created by Exe Team'
+interface CommandMetadata {
+  syntax: string;
+  example: string;
+  permissions: string;
+  category: string;
+}
+
+interface CommandData {
+  name: string;
+  description: string;
+  metadata?: CommandMetadata;
+}
+
+// Load all commands dynamically
+function loadAllCommands(): Map<string, any> {
+  const commands = new Map();
+  const commandsPath = path.join(__dirname, '..');
+  const categories = fs.readdirSync(commandsPath).filter(file => 
+    fs.statSync(path.join(commandsPath, file)).isDirectory()
+  );
+
+  for (const category of categories) {
+    const categoryPath = path.join(commandsPath, category);
+    const files = fs.readdirSync(categoryPath).filter(file => 
+      file.endsWith('.ts') || file.endsWith('.js')
+    );
+
+    for (const file of files) {
+      try {
+        const filePath = path.join(categoryPath, file);
+        const command = require(filePath);
+        const cmd = command.default || command;
+        
+        if (cmd.data && cmd.data.name) {
+          commands.set(cmd.data.name, cmd);
+        }
+      } catch (error) {
+        // Silently skip files that can't be loaded
+      }
     }
-];
+  }
+
+  return commands;
+}
+
+// Group commands by category
+function groupCommandsByCategory(commands: Map<string, any>): Map<string, any[]> {
+  const grouped = new Map<string, any[]>();
+
+  for (const [name, cmd] of commands) {
+    const category = cmd.metadata?.category || cmd.data.category || 'Other';
+    
+    if (!grouped.has(category)) {
+      grouped.set(category, []);
+    }
+    
+    grouped.get(category)!.push({
+      name: cmd.data.name,
+      description: cmd.data.description,
+      metadata: cmd.metadata
+    });
+  }
+
+  return grouped;
+}
+
+// Create embed for a specific command
+function createCommandEmbed(commandData: CommandData): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(Theme.PrimaryColor)
+    .setTitle(`${Emojis.INFO} Command: ${commandData.name}`)
+    .setDescription(commandData.description);
+
+  if (commandData.metadata) {
+    embed.addFields(
+      { name: '📝 Syntax', value: `\`${commandData.metadata.syntax}\``, inline: false },
+      { name: '📚 Example', value: `\`${commandData.metadata.example}\``, inline: false },
+      { name: '🔐 Permission', value: commandData.metadata.permissions, inline: true },
+      { name: '📁 Category', value: commandData.metadata.category, inline: true }
+    );
+  }
+
+  embed.setFooter({ text: 'Use !help to see all commands' });
+  embed.setTimestamp();
+
+  return embed;
+}
+
+// Create category overview embed
+function createCategoryEmbed(category: string, commands: any[]): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(Theme.PrimaryColor)
+    .setTitle(`${Emojis.INFO} ${category} Commands`)
+    .setDescription(`Total commands: **${commands.length}**\n\nUse \`!help <command>\` for detailed information about a specific command.`);
+
+  // Group into fields (max 25 fields, max 10 commands per field)
+  const chunked = [];
+  for (let i = 0; i < commands.length; i += 10) {
+    chunked.push(commands.slice(i, i + 10));
+  }
+
+  chunked.forEach((chunk, index) => {
+    const cmdList = chunk.map(cmd => `\`${cmd.name}\` - ${cmd.description}`).join('\n');
+    embed.addFields({
+      name: chunked.length > 1 ? `Commands (${index + 1}/${chunked.length})` : 'Commands',
+      value: cmdList,
+      inline: false
+    });
+  });
+
+  embed.setFooter({ text: `Category: ${category} | Use !help <command> for details` });
+  embed.setTimestamp();
+
+  return embed;
+}
+
+// Create main help embed
+function createMainHelpEmbed(categorizedCommands: Map<string, any[]>): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(Theme.PrimaryColor)
+    .setTitle(`${Emojis.INFO} Bot Command Help`)
+    .setDescription(`Welcome to the help menu! Here are all available command categories.\n\nUse \`!help <command>\` to see details about a specific command.`);
+
+  let totalCommands = 0;
+  
+  for (const [category, commands] of categorizedCommands) {
+    totalCommands += commands.length;
+    const commandNames = commands.slice(0, 8).map(c => `\`${c.name}\``).join(', ');
+    const more = commands.length > 8 ? `\n+${commands.length - 8} more...` : '';
+    
+    embed.addFields({
+      name: `${category} (${commands.length} commands)`,
+      value: commandNames + more,
+      inline: false
+    });
+  }
+
+  embed.addFields({
+    name: '\u200B',
+    value: `**Total Commands:** ${totalCommands}\n\n📖 **Quick Start:**\n• \`!help <command>\` - View specific command info\n• Commands support both \`!\` and \`/\` prefixes`,
+    inline: false
+  });
+
+  embed.setFooter({ text: 'Bot created by Exe Team' });
+  embed.setTimestamp();
+
+  return embed;
+}
 
 export default {
-    data: new SlashCommandBuilder()
-        .setName('ghelp')
-        .setDescription('Shows available commands with interactive navigation'),
+  data: new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('Shows help for commands')
+    .addStringOption(option =>
+      option
+        .setName('command')
+        .setDescription('Specific command to get help for')
+        .setRequired(false)
+    ),
 
-    async execute(interaction: ChatInputCommandInteraction) {
-        let currentPage = 0;
-        const message = await interaction.reply({ 
-            embeds: [createPageEmbed(currentPage)], 
-            components: [createButtons(currentPage)],
-            ephemeral: true,
-            fetchReply: true
+  async execute(interaction: ChatInputCommandInteraction) {
+    const commandName = interaction.options.getString('command');
+    const commands = loadAllCommands();
+
+    if (commandName) {
+      // Show specific command help
+      const command = commands.get(commandName.toLowerCase());
+      
+      if (!command) {
+        return interaction.reply({
+          embeds: [new EmbedBuilder()
+            .setColor(Theme.ErrorColor)
+            .setDescription(`${Emojis.CROSS} Command \`${commandName}\` not found.`)
+          ],
+          ephemeral: true
         });
+      }
 
-        const collector = message.createMessageComponentCollector({ 
-            componentType: ComponentType.Button, 
-            time: 300000 
-        });
+      const commandData: CommandData = {
+        name: command.data.name,
+        description: command.data.description,
+        metadata: command.metadata
+      };
 
-        collector.on('collect', async (i) => {
-            if (i.user.id !== interaction.user.id) {
-                return i.reply({ content: `${Emojis.CROSS} This help menu is not for you!`, ephemeral: true });
-            }
-
-            if (i.customId === 'help_prev') {
-                currentPage = currentPage > 0 ? currentPage - 1 : PAGES.length - 1;
-            } else if (i.customId === 'help_next') {
-                currentPage = currentPage < PAGES.length - 1 ? currentPage + 1 : 0;
-            } else if (i.customId === 'help_home') {
-                currentPage = 0;
-            } else if (i.customId === 'help_close') {
-                collector.stop();
-                return i.update({ 
-                    embeds: [createClosedEmbed()], 
-                    components: [] 
-                });
-            }
-
-            await i.update({ 
-                embeds: [createPageEmbed(currentPage)], 
-                components: [createButtons(currentPage)] 
-            });
-        });
-
-        collector.on('end', () => {
-            if (message.editable) {
-                message.edit({ components: [] }).catch(() => {});
-            }
-        });
-    },
-
-    async prefixRun(message: any) {
-        let currentPage = 0;
-        const msg = await message.channel.send({ 
-            embeds: [createPageEmbed(currentPage)], 
-            components: [createButtons(currentPage)]
-        });
-
-        const collector = msg.createMessageComponentCollector({ 
-            componentType: ComponentType.Button, 
-            time: 300000 
-        });
-
-        collector.on('collect', async (i: any) => {
-            if (i.user.id !== message.author.id) {
-                return i.reply({ content: `${Emojis.CROSS} This help menu is not for you!`, ephemeral: true });
-            }
-
-            if (i.customId === 'help_prev') {
-                currentPage = currentPage > 0 ? currentPage - 1 : PAGES.length - 1;
-            } else if (i.customId === 'help_next') {
-                currentPage = currentPage < PAGES.length - 1 ? currentPage + 1 : 0;
-            } else if (i.customId === 'help_home') {
-                currentPage = 0;
-            } else if (i.customId === 'help_close') {
-                collector.stop();
-                return i.update({ 
-                    embeds: [createClosedEmbed()], 
-                    components: [] 
-                });
-            }
-
-            await i.update({ 
-                embeds: [createPageEmbed(currentPage)], 
-                components: [createButtons(currentPage)] 
-            });
-        });
-
-        collector.on('end', () => {
-            msg.edit({ components: [] }).catch(() => {});
-        });
+      return interaction.reply({
+        embeds: [createCommandEmbed(commandData)],
+        ephemeral: true
+      });
     }
-};
 
-function createPageEmbed(page: number): EmbedBuilder {
-    const pageData = PAGES[page];
-    const embed = new EmbedBuilder()
-        .setTitle(pageData.title)
-        .setDescription(pageData.description)
-        .setColor(pageData.color as any)
-        .setFooter({ text: pageData.footer })
-        .setTimestamp();
-
-    pageData.fields.forEach(field => {
-        embed.addFields(field);
+    // Show all commands grouped by category
+    const categorized = groupCommandsByCategory(commands);
+    return interaction.reply({
+      embeds: [createMainHelpEmbed(categorized)],
+      ephemeral: true
     });
+  },
 
-    return embed;
-}
+  async prefixRun(message: Message, args: string[]) {
+    const commands = loadAllCommands();
 
-function createButtons(currentPage: number): ActionRowBuilder<ButtonBuilder> {
-    return new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('help_home')
-                .setLabel('Home')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(currentPage === 0),
-            new ButtonBuilder()
-                .setCustomId('help_prev')
-                .setLabel('Previous')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('help_next')
-                .setLabel('Next')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('help_close')
-                .setLabel('Close')
-                .setStyle(ButtonStyle.Danger)
-        );
-}
+    if (args.length > 0) {
+      const commandName = args[0].toLowerCase();
+      const command = commands.get(commandName);
 
-function createClosedEmbed(): EmbedBuilder {
-    return new EmbedBuilder()
-        .setDescription(`${Emojis.TICK} Help menu closed. Use \`/ghelp\` or \`!help\` to view again.`)
-        .setColor(Theme.SuccessColor)
-        .setTimestamp();
-}
+      if (!command) {
+        return message.reply({
+          embeds: [new EmbedBuilder()
+            .setColor(Theme.ErrorColor)
+            .setDescription(`${Emojis.CROSS} Command \`${commandName}\` not found. Use \`!help\` to see all commands.`)
+          ]
+        });
+      }
+
+      const commandData: CommandData = {
+        name: command.data.name,
+        description: command.data.description,
+        metadata: command.metadata
+      };
+
+      return message.reply({
+        embeds: [createCommandEmbed(commandData)]
+      });
+    }
+
+    // Show all commands grouped by category
+    const categorized = groupCommandsByCategory(commands);
+    return message.reply({
+      embeds: [createMainHelpEmbed(categorized)]
+    });
+  }
+};

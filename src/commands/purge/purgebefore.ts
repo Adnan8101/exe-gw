@@ -15,7 +15,7 @@ export default {
     example: '!purgebefore 123456789012345678',
     permissions: 'Manage Messages',
     category: 'Purge'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {
