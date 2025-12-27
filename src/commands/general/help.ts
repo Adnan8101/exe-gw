@@ -94,7 +94,7 @@ function createCommandEmbed(commandData: CommandData): EmbedBuilder {
 
 // Create category overview embed with pagination
 function createCategoryEmbed(category: string, commands: any[], page: number = 0): { embed: EmbedBuilder, totalPages: number } {
-  const commandsPerPage = 10;
+  const commandsPerPage = 8;
   const totalPages = Math.ceil(commands.length / commandsPerPage);
   const startIdx = page * commandsPerPage;
   const endIdx = startIdx + commandsPerPage;
@@ -105,10 +105,10 @@ function createCategoryEmbed(category: string, commands: any[], page: number = 0
     .setTitle(`${category} Commands`)
     .setDescription(`Showing ${startIdx + 1}-${Math.min(endIdx, commands.length)} of ${commands.length} commands\n\nUse \`!help <command>\` for detailed information.`);
 
-  const cmdList = pageCommands.map(cmd => `**${cmd.name}**\n${cmd.description}`).join('\n\n');
+  const cmdList = pageCommands.map(cmd => `**${cmd.name}**\n\`${cmd.description}\``).join('\n\n');
   
   embed.addFields({
-    name: `Commands (Page ${page + 1}/${totalPages})`,
+    name: '\u200B',
     value: cmdList || 'No commands found',
     inline: false
   });
@@ -302,10 +302,11 @@ export default {
 
     // Show all commands grouped by category with dropdown
     const categorized = groupCommandsByCategory(commands);
-    const response = await interaction.reply({
+    await interaction.reply({
       embeds: [createMainHelpEmbed(categorized)],
       components: [createCategorySelectMenu(categorized)],
-      ephemeral: true
+      ephemeral: true,
+      fetchReply: true
     });
 
     // Store current state
@@ -315,7 +316,8 @@ export default {
     };
 
     // Create collector for all component interactions
-    const collector = response.createMessageComponentCollector({
+    const collector = interaction.channel!.createMessageComponentCollector({
+      filter: (i) => i.user.id === interaction.user.id,
       time: 300000 // 5 minutes
     });
 
@@ -373,7 +375,7 @@ export default {
           });
         } else if (state.currentCategory && categorized.has(state.currentCategory)) {
           const categoryCommands = categorized.get(state.currentCategory)!;
-          const totalPages = Math.ceil(categoryCommands.length / 10);
+          const totalPages = Math.ceil(categoryCommands.length / 8);
           
           switch (componentInteraction.customId) {
             case 'help_first':
@@ -438,10 +440,107 @@ export default {
       });
     }
 
-    // Show all commands grouped by category
+    // Show all commands grouped by category with dropdown
     const categorized = groupCommandsByCategory(commands);
-    return message.reply({
-      embeds: [createMainHelpEmbed(categorized)]
+    const reply = await message.reply({
+      embeds: [createMainHelpEmbed(categorized)],
+      components: [createCategorySelectMenu(categorized)]
+    });
+
+    // Store current state
+    const state = {
+      currentCategory: '',
+      currentPage: 0
+    };
+
+    // Create collector for all component interactions
+    const collector = reply.createMessageComponentCollector({
+      filter: (i) => i.user.id === message.author.id,
+      time: 300000 // 5 minutes
+    });
+
+    collector.on('collect', async (componentInteraction) => {
+      if (componentInteraction.isStringSelectMenu()) {
+        const selectedCategory = componentInteraction.values[0];
+        
+        // Handle "All Categories" option
+        if (selectedCategory === 'all_categories') {
+          await componentInteraction.update({
+            embeds: [createMainHelpEmbed(categorized)],
+            components: [createCategorySelectMenu(categorized)]
+          });
+          return;
+        }
+        
+        // Find the actual category name
+        let actualCategory = '';
+        for (const [cat] of categorized) {
+          if (cat.toLowerCase().replace(/\s+/g, '_') === selectedCategory) {
+            actualCategory = cat;
+            break;
+          }
+        }
+
+        if (actualCategory && categorized.has(actualCategory)) {
+          state.currentCategory = actualCategory;
+          state.currentPage = 0;
+          
+          const categoryCommands = categorized.get(actualCategory)!;
+          const { embed, totalPages } = createCategoryEmbed(actualCategory, categoryCommands, 0);
+          
+          const components: any[] = [createCategorySelectMenu(categorized)];
+          if (totalPages > 1) {
+            components.push(createPaginationButtons(0, totalPages));
+          }
+          
+          await componentInteraction.update({
+            embeds: [embed],
+            components
+          });
+        }
+      } else if (componentInteraction.isButton()) {
+        if (componentInteraction.customId === 'help_back') {
+          await componentInteraction.update({
+            embeds: [createMainHelpEmbed(categorized)],
+            components: [createCategorySelectMenu(categorized)]
+          });
+        } else if (state.currentCategory && categorized.has(state.currentCategory)) {
+          const categoryCommands = categorized.get(state.currentCategory)!;
+          const totalPages = Math.ceil(categoryCommands.length / 8);
+          
+          switch (componentInteraction.customId) {
+            case 'help_first':
+              state.currentPage = 0;
+              break;
+            case 'help_prev':
+              state.currentPage = Math.max(0, state.currentPage - 1);
+              break;
+            case 'help_next':
+              state.currentPage = Math.min(totalPages - 1, state.currentPage + 1);
+              break;
+            case 'help_last':
+              state.currentPage = totalPages - 1;
+              break;
+          }
+          
+          const { embed } = createCategoryEmbed(state.currentCategory, categoryCommands, state.currentPage);
+          
+          await componentInteraction.update({
+            embeds: [embed],
+            components: [
+              createCategorySelectMenu(categorized),
+              createPaginationButtons(state.currentPage, totalPages)
+            ]
+          });
+        }
+      }
+    });
+
+    collector.on('end', () => {
+      // Disable the components after timeout
+      reply.edit({
+        components: []
+      }).catch(() => {});
     });
   }
 };
