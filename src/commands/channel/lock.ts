@@ -105,9 +105,8 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.ErrorColor)
- .setTitle(`${Emojis.TICK} Channel Locked`)
- .setDescription(`${channel} is now locked`)
- .setFooter({ text: `By ${message.author.tag}` })
+ .setDescription(`${Emojis.TICK} Locked ${channel}`)
+ .setFooter({ text: `Mod: ${message.author.tag}` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });

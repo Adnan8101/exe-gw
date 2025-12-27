@@ -174,13 +174,8 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(`${Emojis.TICK} Temporary Role`)
- .setDescription(`Added ${role} to ${targetMember.user.tag}`)
- .addFields(
- { name: 'Duration', value: formatDuration(duration), inline: true },
- { name: 'Expires', value: `<t:${Math.floor(expiresAt.getTime() / 1000)}:R>`, inline: true }
- )
- .setFooter({ text: `By ${message.author.tag}` })
+ .setDescription(`${Emojis.TICK} Temporary ${role} added to ${targetMember.user} for ${formatDuration(duration)}`)
+ .setFooter({ text: `Mod: ${message.author.tag} | Expires: ${Math.floor(expiresAt.getTime() / 1000)}` })
  .setTimestamp();
  
  await message.reply({ embeds: [embed] });

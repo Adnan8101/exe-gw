@@ -106,9 +106,8 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(`${Emojis.TICK} Warnings Cleared`)
- .setDescription(`Cleared **${result.count}** warning(s) for ${targetMember.user.tag}`)
- .setFooter({ text: `By ${message.author.tag}` })
+ .setDescription(`${Emojis.TICK} Cleared **${result.count}** warning(s) for ${targetMember.user}`)
+ .setFooter({ text: `Mod: ${message.author.tag}` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });

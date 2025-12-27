@@ -115,9 +115,8 @@ export default {
  
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(`${Emojis.TICK} Timeout Removed`)
- .setDescription(`${targetMember.user.tag} can communicate again`)
- .setFooter({ text: `By ${message.author.tag}` })
+ .setDescription(`${Emojis.TICK} Untimeout ${targetMember.user}`)
+ .setFooter({ text: `Mod: ${message.author.tag}` })
  .setTimestamp();
  
  await message.reply({ embeds: [embed] });

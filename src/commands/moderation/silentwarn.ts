@@ -115,15 +115,15 @@ export default {
  silent: true
  });
 
+ let description = `${Emojis.TICK} Silent Warning ${targetMember.user}`;
+ if (reason) {
+ description += `\n**Reason:** ${reason}`;
+ }
+
  const embed = new EmbedBuilder()
  .setColor(Theme.EmbedColor)
- .setTitle(`${Emojis.TICK} Silent Warning`)
- .addFields(
- { name: 'User', value: `${targetMember.user.tag} (${targetMember.id})`, inline: true },
- { name: 'Moderator', value: `${message.author.tag}`, inline: true },
- { name: 'Reason', value: reason }
- )
- .setFooter({ text: `Case ID: ${caseId} • User was not notified` })
+ .setDescription(description)
+ .setFooter({ text: `Case ID: ${caseId} | Mod: ${message.author.tag} | User was not notified` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });

@@ -64,20 +64,19 @@ export function createModEmbed(
   caseId: string,
   duration?: string
 ): EmbedBuilder {
+  let description = `${Emojis.TICK} ${capitalizeFirst(action)} ${target}`;
+  if (duration) {
+    description += ` for ${duration}`;
+  }
+  if (reason) {
+    description += `\n**Reason:** ${reason}`;
+  }
+
   const embed = new EmbedBuilder()
     .setColor(Theme.SuccessColor)
-    .setTitle(`${Emojis.TICK} ${capitalizeFirst(action)}`)
-    .addFields(
-      { name: 'User', value: `${target.tag}\n\`${target.id}\``, inline: true },
-      { name: 'Moderator', value: moderator.tag, inline: true },
-      { name: 'Reason', value: reason || 'No reason provided' }
-    )
-    .setFooter({ text: `Case ID: ${caseId}` })
+    .setDescription(description)
+    .setFooter({ text: `Case ID: ${caseId} | Mod: ${moderator.tag}` })
     .setTimestamp();
-
-  if (duration) {
-    embed.addFields({ name: 'Duration', value: duration, inline: true });
-  }
 
   return embed;
 }
