@@ -7,7 +7,7 @@ export default {
         .setDescription('Check the bot\'s WebSocket ping'),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        // Defer reply to calculate API latency
+        
         const sent = Date.now();
         await interaction.deferReply();
         const apiLatency = Date.now() - sent;

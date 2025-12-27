@@ -60,20 +60,20 @@ export default {
         const guildId = ctx.guildId!;
         const isInteraction = !!ctx.options;
 
-        // Get target and messageId from interaction or prefix
+        
         if (isInteraction) {
             target = ctx.options.getString('target', true);
             messageId = ctx.options.getString('messageid');
         }
 
-        // Defer reply for processing time
+        
         if (isInteraction) {
             await ctx.deferReply({ ephemeral: true });
         }
 
         try {
             if (target === 'all') {
-                // Refresh all active giveaways in the server
+                
                 const giveaways = await prisma.giveaway.findMany({
                     where: { 
                         guildId, 
@@ -106,12 +106,12 @@ export default {
 
                         const message = await channel.messages.fetch(giveaway.messageId);
                         
-                        // Get current participant count
+                        
                         const participantCount = await prisma.participant.count({
                             where: { giveawayId: giveaway.id }
                         });
 
-                        // Create refreshed embed
+                        
                         const embed = createGiveawayEmbed(giveaway, participantCount);
                         await message.edit({ embeds: [embed] });
                         
@@ -133,7 +133,7 @@ export default {
                 return ctx.channel.send({ embeds: [resultEmbed] });
 
             } else if (target === 'id') {
-                // Refresh specific giveaway by message ID
+                
                 if (!messageId) {
                     const embed = new EmbedBuilder()
                         .setDescription(`${Emojis.CROSS} Please provide a message ID when using \`id\` target.\n\`\`\`!grefresh id <messageId>\`\`\``)
@@ -182,12 +182,12 @@ export default {
 
                     const message = await channel.messages.fetch(giveaway.messageId);
                     
-                    // Get current participant count
+                    
                     const participantCount = await prisma.participant.count({
                         where: { giveawayId: giveaway.id }
                     });
 
-                    // Create refreshed embed
+                    
                     const embed = createGiveawayEmbed(giveaway, participantCount);
                     await message.edit({ embeds: [embed] });
 

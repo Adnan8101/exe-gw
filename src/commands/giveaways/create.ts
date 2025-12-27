@@ -17,6 +17,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gcreate')
         .setDescription('Start a new giveaway')
+        
         .addStringOption(option =>
             option.setName('prize')
                 .setDescription('The prize to give away')
@@ -29,22 +30,18 @@ export default {
             option.setName('duration')
                 .setDescription('Duration (e.g. 10m, 1h, 2d)')
                 .setRequired(true))
+        
         .addChannelOption(option =>
             option.setName('channel')
                 .setDescription('Channel to host the giveaway in (default: current channel)')
                 .addChannelTypes(ChannelType.GuildText))
+        
         .addRoleOption(option =>
             option.setName('role_requirement')
                 .setDescription('Required role to enter'))
         .addIntegerOption(option =>
             option.setName('invite_requirement')
                 .setDescription('Minimum invites required'))
-        .addIntegerOption(option =>
-            option.setName('account_age')
-                .setDescription('Minimum account age in days'))
-        .addIntegerOption(option =>
-            option.setName('server_age')
-                .setDescription('Minimum days in server'))
         .addBooleanOption(option =>
             option.setName('captcha')
                 .setDescription('Require captcha verification'))
@@ -54,21 +51,23 @@ export default {
         .addIntegerOption(option =>
             option.setName('voice')
                 .setDescription('Minimum voice minutes required'))
-        .addStringOption(option =>
-            option.setName('custom_message')
-                .setDescription('Custom message to display in giveaway'))
+        
         .addRoleOption(option =>
             option.setName('winner_role')
                 .setDescription('Role to give to winners'))
         .addRoleOption(option =>
             option.setName('assign_role')
                 .setDescription('Role to assign to participants'))
+        
+        .addStringOption(option =>
+            option.setName('custom_message')
+                .setDescription('Custom message to display in giveaway'))
         .addStringOption(option =>
             option.setName('thumbnail')
                 .setDescription('URL for giveaway thumbnail'))
         .addStringOption(option =>
             option.setName('custom_emoji')
-                .setDescription('Custom emoji for giveaway reaction (default: <a:Exe_Gw:1454033571273506929>)')),
+                .setDescription('Custom emoji for giveaway reaction')),
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (!await hasGiveawayPermissions(interaction)) {
@@ -80,7 +79,7 @@ export default {
         const durationStr = interaction.options.getString('duration', true);
         const channel = interaction.options.getChannel('channel') as TextChannel || interaction.channel as TextChannel;
 
-        // Validate duration
+        
         const validation = validateDuration(durationStr);
         if (!validation.isValid) {
             return interaction.reply({
@@ -89,7 +88,7 @@ export default {
             });
         }
 
-        // Calculate end time using centralized utility (UTC)
+        
         const endTimeMs = calculateEndTimeFromString(durationStr);
         if (!endTimeMs) {
             return interaction.reply({
@@ -102,7 +101,7 @@ export default {
             return interaction.reply({ content: `${Emojis.CROSS} Invalid number of winners.`, ephemeral: true });
         }
 
-        // Optional requirements
+        
         const roleReq = interaction.options.getRole('role_requirement');
         const inviteReq = interaction.options.getInteger('invite_requirement') || 0;
         const accountAgeReq = interaction.options.getInteger('account_age') || 0;
@@ -122,7 +121,7 @@ export default {
             hostId: interaction.user.id,
             prize: prize,
             winnersCount: winners,
-            endTime: toBigInt(endTimeMs), // Use centralized time utility with UTC
+            endTime: toBigInt(endTimeMs), 
             createdAt: toBigInt(Date.now()),
             roleRequirement: roleReq?.id || null,
             inviteRequirement: inviteReq,
@@ -141,13 +140,13 @@ export default {
         try {
             await interaction.deferReply({ ephemeral: true });
 
-            const gForEmbed: any = { ...giveawayData, messageId: "", id: 0 }; // Mock
+            const gForEmbed: any = { ...giveawayData, messageId: "", id: 0 }; 
             const embed = createGiveawayEmbed(gForEmbed, 0);
 
             const message = await channel.send({ embeds: [embed] });
             await message.react(customEmoji);
 
-            // Now save to DB
+            
             const giveaway = await prisma.giveaway.create({
                 data: {
                     ...giveawayData,
@@ -164,12 +163,12 @@ export default {
     },
 
     async prefixRun(message: any, args: string[]) {
-        // Fetch global commands to find the ID for /gcreate
+        
         const command = message.client.application.commands.cache.find((c: any) => c.name === 'gcreate');
         const commandId = command ? command.id : '0';
 
-        // Dynamic import Theme to avoid circular dep if needed, but imported at top should be fine if available.
-        // Wait, Theme is not imported in this file yet.
+        
+        
         await message.reply({
             content: `${Emojis.CROSS} The \`!gcreate\` command has been moved to slash commands only.\n\nPlease use </gcreate:${commandId}> instead!`
         });

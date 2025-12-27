@@ -8,7 +8,7 @@ export async function generateCaptcha() {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#23272A';
     ctx.fillRect(0, 0, width, height);
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No ambiguous characters (I, 1, O, 0)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
     let text = '';
     for (let i = 0; i < 6; i++) {
         text += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -23,7 +23,7 @@ export async function generateCaptcha() {
         ctx.stroke();
     }
 
-    // Noise (Dots)
+    
     for (let i = 0; i < 100; i++) {
         ctx.fillStyle = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`;
         ctx.beginPath();
@@ -31,17 +31,17 @@ export async function generateCaptcha() {
         ctx.fill();
     }
 
-    // Text
+    
     ctx.font = 'bold 60px Sans';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw each char with rotation
+    
     const charWidth = width / 8;
     for (let i = 0; i < text.length; i++) {
         ctx.save();
         ctx.translate(60 + i * 50, height / 2);
-        ctx.rotate((Math.random() - 0.5) * 0.4); // Random rotation
+        ctx.rotate((Math.random() - 0.5) * 0.4); 
         ctx.fillStyle = '#ffffff';
         ctx.fillText(text[i], 0, 0);
         ctx.restore();

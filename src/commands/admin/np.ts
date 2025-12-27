@@ -46,7 +46,7 @@ export default {
             if (subcommand === 'add') {
                 const user = interaction.options.getUser('user', true);
 
-                // Check if already exists
+                
                 const existing = await (prisma as any).noPrefixUser.findUnique({
                     where: { userId: user.id }
                 });
@@ -74,7 +74,7 @@ export default {
             } else if (subcommand === 'remove') {
                 const user = interaction.options.getUser('user', true);
 
-                // Check if exists
+                
                 const existing = await (prisma as any).noPrefixUser.findUnique({
                     where: { userId: user.id }
                 });

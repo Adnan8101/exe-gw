@@ -20,11 +20,11 @@ export function parseDuration(durationStr: string): number | null {
     const unit = match[2];
 
     switch (unit) {
-        case 's': return value * 1000;                    // seconds
-        case 'm': return value * 60 * 1000;               // minutes
-        case 'h': return value * 60 * 60 * 1000;          // hours
-        case 'd': return value * 24 * 60 * 60 * 1000;     // days
-        case 'w': return value * 7 * 24 * 60 * 60 * 1000; // weeks
+        case 's': return value * 1000;                    
+        case 'm': return value * 60 * 1000;               
+        case 'h': return value * 60 * 60 * 1000;          
+        case 'd': return value * 24 * 60 * 60 * 1000;     
+        case 'w': return value * 7 * 24 * 60 * 60 * 1000; 
         default: return null;
     }
 }
@@ -131,7 +131,7 @@ export function validateDuration(durationStr: string): { isValid: boolean; error
         };
     }
     
-    // Minimum 5 seconds
+    
     if (duration < 5000) {
         return {
             isValid: false,
@@ -139,7 +139,7 @@ export function validateDuration(durationStr: string): { isValid: boolean; error
         };
     }
     
-    // Maximum 60 days
+    
     if (duration > 60 * 24 * 60 * 60 * 1000) {
         return {
             isValid: false,
@@ -170,8 +170,8 @@ export function calculateTimeout(endTime: number | bigint): number | null {
     
     if (remaining <= 0) return null;
     
-    // JavaScript setTimeout max safe value
-    const MAX_TIMEOUT = 2147483647; // 2^31 - 1
+    
+    const MAX_TIMEOUT = 2147483647; 
     
     return Math.min(remaining, MAX_TIMEOUT);
 }

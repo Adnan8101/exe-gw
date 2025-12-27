@@ -40,7 +40,7 @@ export default {
         try {
             const guildId = interaction.guildId!;
 
-            // Fetch all giveaways for this server with winners
+            
             const giveaways = await prisma.giveaway.findMany({
                 where: { guildId },
                 orderBy: { createdAt: 'desc' },
@@ -160,9 +160,9 @@ export default {
             components: [buttons] 
         });
 
-        // Create collector for button interactions
+        
         const collector = response.createMessageComponentCollector({ 
-            time: 600000 // 10 minutes
+            time: 600000 
         });
 
         collector.on('collect', async i => {
@@ -196,7 +196,7 @@ export default {
             try {
                 await interaction.editReply({ components: [] });
             } catch (e) {
-                // Message might be deleted
+                
             }
         });
     },
@@ -206,7 +206,7 @@ export default {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Giveaway History');
 
-            // Define columns
+            
             worksheet.columns = [
                 { header: 'ID', key: 'id', width: 10 },
                 { header: 'Prize', key: 'prize', width: 30 },
@@ -221,7 +221,7 @@ export default {
                 { header: 'Message ID', key: 'messageId', width: 20 }
             ];
 
-            // Style header row
+            
             worksheet.getRow(1).font = { bold: true };
             worksheet.getRow(1).fill = {
                 type: 'pattern',
@@ -229,7 +229,7 @@ export default {
                 fgColor: { argb: 'FF5865F2' }
             };
 
-            // Add data
+            
             for (const gw of giveaways) {
                 const startTime = new Date(Number(gw.createdAt));
                 const endTime = new Date(Number(gw.endTime));
@@ -254,7 +254,7 @@ export default {
                 });
             }
 
-            // Generate buffer
+            
             const buffer = await workbook.xlsx.writeBuffer();
             const attachment = new AttachmentBuilder(Buffer.from(buffer), { 
                 name: `giveaway-history-${interaction.guildId}-${Date.now()}.xlsx` 

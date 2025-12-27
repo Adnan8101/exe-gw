@@ -11,7 +11,7 @@ import { Emojis } from '../../utils/emojis';
 
 const prisma = new PrismaClient();
 
-// Badge definitions
+
 const BADGES: { [key: string]: { name: string; emoji: string; description: string } } = {
     'es': {
         name: 'Early Supporter',
@@ -52,14 +52,14 @@ export default {
     async prefixRun(message: Message, args: string[]) {
         let targetUser: User = message.author;
 
-        // Check for mentioned user or user ID
+        
         if (message.mentions.users.first()) {
             targetUser = message.mentions.users.first()!;
         } else if (args[0]) {
             try {
                 targetUser = await message.client.users.fetch(args[0]);
             } catch {
-                // Stay with message author
+                
             }
         }
 
@@ -86,7 +86,7 @@ export default {
         if (userBadges.length === 0) {
             embed.setDescription('**No badges**');
         } else {
-            // Create badge list without title
+            
             const badgeList = userBadges.map((ub: { badge: string }) => {
                 const badgeInfo = BADGES[ub.badge];
                 return badgeInfo 

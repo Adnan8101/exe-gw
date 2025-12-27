@@ -4,7 +4,7 @@ import { giveawayEndedEmbed, giveawayCancelledEmbed, createGiveawayEmbed } from 
 
 const prisma = new PrismaClient();
 
-// Cache for pre-calculated winners
+
 const preCalculatedWinners: Map<string, { winners: string[], calculatedAt: number }> = new Map();
 
 export class GiveawayService {
@@ -92,23 +92,23 @@ export class GiveawayService {
         const giveaway = await prisma.giveaway.findUnique({ where: { messageId } });
         if (!giveaway || giveaway.ended) return;
 
-        // Mark ended immediately
+        
         await prisma.giveaway.update({
             where: { id: giveaway.id },
             data: { ended: true }
         });
 
-        // Check if we have pre-calculated winners
+        
         let winners: string[];
         const preCalc = preCalculatedWinners.get(messageId);
         
         if (preCalc && (Date.now() - preCalc.calculatedAt) < 30000) {
-            // Use pre-calculated winners if they were calculated within the last 30 seconds
+            
             winners = preCalc.winners;
             preCalculatedWinners.delete(messageId);
             console.log(`[GiveawayService] Using pre-calculated winners for ${messageId}`);
         } else {
-            // Calculate winners now
+            
             const participants = await prisma.participant.findMany({
                 where: { giveawayId: giveaway.id },
                 select: { userId: true }
@@ -119,7 +119,7 @@ export class GiveawayService {
             );
         }
 
-        // Save winners
+        
         for (const winnerId of winners) {
             await prisma.winner.create({
                 data: {
@@ -130,13 +130,13 @@ export class GiveawayService {
             });
         }
 
-        // Announce
+        
         const channel = this.client.channels.cache.get(giveaway.channelId) as TextChannel;
         const guild = this.client.guilds.cache.get(giveaway.guildId);
 
         if (channel && guild) {
             try {
-                // Update Embed
+                
                 const embed = giveawayEndedEmbed(giveaway, winners);
                 let giveawayMessage;
                 try {
@@ -144,11 +144,11 @@ export class GiveawayService {
                     await giveawayMessage.edit({ embeds: [embed] });
                 } catch (e) { }
 
-                // Assign Roles & Announce
+                
                 if (winners.length > 0) {
                     const mentions = winners.map(id => `<@${id}>`).join(", ");
 
-                    // Assign Winner Role with hierarchy check
+                    
                     if (giveaway.winnerRole) {
                         const roleCheck = await this.canAssignRole(guild, giveaway.winnerRole);
                         if (!roleCheck.canAssign) {
@@ -169,7 +169,7 @@ export class GiveawayService {
                         }
                     }
 
-                    // Button
+                    
                     const row = new ActionRowBuilder<ButtonBuilder>()
                         .addComponents(
                             new ButtonBuilder()
@@ -242,7 +242,7 @@ export class GiveawayService {
         const giveaway = await prisma.giveaway.findUnique({ where: { messageId } });
         if (!giveaway) throw new Error("Giveaway not found");
 
-        // Delete related data first (cascade should handle this if configured, but explicit is safe for now)
+        
         await prisma.participant.deleteMany({ where: { giveawayId: giveaway.id } });
         await prisma.winner.deleteMany({ where: { giveawayId: giveaway.id } });
 
@@ -254,7 +254,7 @@ export class GiveawayService {
                 const message = await channel.messages.fetch(giveaway.messageId);
                 await message.delete();
             } catch (error) {
-                // Message might already be gone
+                
             }
         }
     }

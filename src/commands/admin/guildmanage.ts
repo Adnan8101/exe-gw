@@ -46,7 +46,7 @@ export default {
             if (subcommand === 'add') {
                 const guildId = interaction.options.getString('guild_id', true);
                 
-                // Check if guild exists
+                
                 const guild = await interaction.client.guilds.fetch(guildId).catch(() => null);
                 if (!guild) {
                     const embed = new EmbedBuilder()
@@ -56,7 +56,7 @@ export default {
                     return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
 
-                // Check if already allowed
+                
                 const existing = await prisma.allowedGuild.findUnique({
                     where: { guildId }
                 });
@@ -69,7 +69,7 @@ export default {
                     return interaction.reply({ embeds: [embed], ephemeral: true });
                 }
 
-                // Add to allowed list
+                
                 await prisma.allowedGuild.create({
                     data: {
                         guildId: guildId,

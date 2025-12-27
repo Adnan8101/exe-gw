@@ -47,14 +47,14 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
     if (!giveaway || giveaway.ended) return;
     if (reaction.emoji.name !== giveaway.emoji && reaction.emoji.toString() !== giveaway.emoji) return;
 
-    // Check if participant
+    
     const existing = await prisma.participant.findFirst({
         where: { giveawayId: giveaway.id, userId: user.id }
     });
 
     if (existing) return;
 
-    // Check requirements (including stats checks which we already have in checkAllRequirements)
+    
     const result = await checkAllRequirements(client, reaction.message.guildId!, user.id, giveaway);
     if (!result.passed) {
         await reaction.users.remove(user.id);
@@ -69,7 +69,7 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
         return;
     }
 
-    // CAPTCHA FLOW - Allow reaction first, then verify
+    
     if (giveaway.captchaRequirement) {
         try {
             const { generateCaptcha } = await import('../utils/captcha');
@@ -98,7 +98,7 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
             await dmChannel.send({ embeds: [captchaEmbed], files: [attachment] });
 
             try {
-                // Wait for response
+                
                 const filter = (m: any) => m.author.id === user.id;
                 const collected = await dmChannel.awaitMessages({ filter, max: 1, time: 60000, errors: ['time'] });
                 const response = collected.first()?.content.toUpperCase().trim();
@@ -150,20 +150,20 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
 
         } catch (e: any) {
             console.error("Error sending captcha:", e);
-            // If DM fails (closed DMs), we fail the entry
+            
             await reaction.users.remove(user.id);
             
-            // Try to notify in channel briefly
+            
             try {
                 const channel = reaction.message.channel as TextChannel;
                 const msg = await channel.send(`<@${user.id}> Your DMs are closed. Please enable DMs to enter this giveaway (captcha required).`);
-                setTimeout(() => msg.delete().catch(() => {}), 10000); // Delete after 10 seconds
+                setTimeout(() => msg.delete().catch(() => {}), 10000); 
             } catch (channelError) { }
             return;
         }
     }
 
-    // Add participant
+    
     try {
         await prisma.participant.create({
             data: {
@@ -173,14 +173,14 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
             }
         });
 
-        // Assign Role with hierarchy check
+        
         if (giveaway.assignRole) {
             const guild = client.guilds.cache.get(giveaway.guildId);
             if (guild) {
                 const roleCheck = await canAssignRole(guild, giveaway.assignRole);
                 if (!roleCheck.canAssign) {
                     console.error(`Cannot assign entry role: ${roleCheck.reason}`);
-                    // Notify in channel once
+                    
                     try {
                         const channel = client.channels.cache.get(giveaway.channelId) as TextChannel;
                         const existingWarning = await channel.messages.fetch({ limit: 10 });
@@ -208,11 +208,11 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
             }
         }
     } catch (e) {
-        // Unique constraint violation if double-joined rapidly
+        
         return;
     }
 
-    // Update Embed
+    
     updateGiveawayMessage(client, giveaway);
 }
 
@@ -225,19 +225,19 @@ export async function handleReactionRemove(reaction: MessageReaction, user: User
 
     if (!giveaway || giveaway.ended) return;
 
-    // Check if participant
+    
     const participant = await prisma.participant.findFirst({
         where: { giveawayId: giveaway.id, userId: user.id }
     });
 
     if (!participant) return;
 
-    // Remove participant
+    
     await prisma.participant.delete({
         where: { id: participant.id }
     });
 
-    // Remove Assigned Role with hierarchy check
+    
     if (giveaway.assignRole) {
         const guild = client.guilds.cache.get(giveaway.guildId);
         if (guild) {

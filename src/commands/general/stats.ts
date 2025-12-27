@@ -19,7 +19,7 @@ export default {
 async function createStatsEmbed(interaction: any) {
     const client = interaction.client;
     
-    // Calculate uptime
+    
     const uptime = client.uptime || 0;
     const days = Math.floor(uptime / 86400000);
     const hours = Math.floor(uptime / 3600000) % 24;
@@ -27,18 +27,18 @@ async function createStatsEmbed(interaction: any) {
     const seconds = Math.floor(uptime / 1000) % 60;
     const uptimeString = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
-    // Memory usage
+    
     const memoryUsage = process.memoryUsage();
     const memoryUsed = (memoryUsage.heapUsed / 1024 / 1024).toFixed(2);
     const memoryTotal = (memoryUsage.heapTotal / 1024 / 1024).toFixed(2);
 
-    // System info
+    
     const totalMemory = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
     const freeMemory = (os.freemem() / 1024 / 1024 / 1024).toFixed(2);
     const cpuModel = os.cpus()[0].model;
     const cpuCores = os.cpus().length;
 
-    // Discord stats
+    
     const guildCount = client.guilds.cache.size;
     const userCount = client.guilds.cache.reduce((acc: number, guild: any) => acc + guild.memberCount, 0);
     const channelCount = client.channels.cache.size;

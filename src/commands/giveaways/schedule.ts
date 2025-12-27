@@ -11,24 +11,22 @@ import {
 } from '../../utils/timeUtils';
 
 const prisma = new PrismaClient();
-
-// Helper to parse Time "HH:mm" with Timezone
 function getScheduledTime(timeStr: string, timezone: string): number | null {
-    // Validate format HH:mm
+    
     const regex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
     if (!regex.test(timeStr)) return null;
 
-    // Check if timezone is valid
+    
     if (!moment.tz.zone(timezone)) return null;
 
     const now = moment.tz(timezone);
     const [h, m] = timeStr.split(':').map(Number);
 
-    // Create a moment object for "today" at the specified time in the correct timezone
+    
     const scheduled = moment.tz(timezone)
         .set({ hour: h, minute: m, second: 0, millisecond: 0 });
 
-    // If time has passed today, move to tomorrow
+    
     if (scheduled.isBefore(now)) {
         scheduled.add(1, 'day');
     }
@@ -40,9 +38,18 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gschedule')
         .setDescription('Schedule a giveaway for a specific time')
-        // ------------------------------------------------
-        // Copy most options from gcreate, adding 'time'
-        // ------------------------------------------------
+        
+        
+        
+        .addStringOption(option =>
+            option.setName('prize').setDescription('Prize to give away').setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('winners').setDescription('Number of winners').setRequired(true))
+        .addStringOption(option =>
+            option.setName('duration').setDescription('Duration (e.g. 30s, 1m, 1h)').setRequired(true))
+        
+        
+        
         .addStringOption(option =>
             option.setName('time').setDescription('Start Time (24h format, e.g. 14:30)').setRequired(true))
         .addStringOption(option =>
@@ -50,16 +57,10 @@ export default {
                 .setDescription('Timezone (e.g. Asia/Kolkata, UTC, America/New_York)')
                 .setRequired(true)
                 .setAutocomplete(true))
-        .addStringOption(option =>
-            option.setName('prize').setDescription('Prize to start').setRequired(true))
-        .addIntegerOption(option =>
-            option.setName('winners').setDescription('Number of winners').setRequired(true))
-        .addStringOption(option =>
-            option.setName('duration').setDescription('Duration (e.g. 30s, 1m, 1h)').setRequired(true))
         .addChannelOption(option =>
             option.setName('channel').setDescription('Channel to start the giveaway in'))
 
-        // --- Optional Requirements ---
+        
         .addRoleOption(option =>
             option.setName('role_requirement').setDescription('Role required to enter'))
         .addIntegerOption(option =>
@@ -78,8 +79,10 @@ export default {
             option.setName('custom_emoji').setDescription('Custom emoji'))
         .addUserOption(option =>
             option.setName('birthday_user').setDescription('User to wish happy birthday to'))
-        .addBooleanOption(option =>
-            option.setName('add_announcement').setDescription('Add an announcement before giveaway starts')),
+        .addStringOption(option =>
+            option.setName('announcement').setDescription('Announcement text to post before giveaway starts'))
+        .addStringOption(option =>
+            option.setName('announcement_media').setDescription('Media URL (image/gif) for announcement')),
 
     async autocomplete(interaction: AutocompleteInteraction) {
         const focusedValue = interaction.options.getFocused();
@@ -104,7 +107,7 @@ export default {
         const durationStr = interaction.options.getString('duration', true);
         const channel = interaction.options.getChannel('channel') as TextChannel || interaction.channel as TextChannel;
 
-        // Optional logic handling for interactions
+        
         const roleReq = interaction.options.getRole('role_requirement');
         const inviteReq = interaction.options.getInteger('invite_requirement') || 0;
         const captchaReq = interaction.options.getBoolean('captcha') || false;
@@ -114,7 +117,11 @@ export default {
         const thumbnail = interaction.options.getString('thumbnail');
         const emoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
         const birthdayUser = interaction.options.getUser('birthday_user');
-        const addAnnouncement = interaction.options.getBoolean('add_announcement') || false;
+        const announcement = interaction.options.getString('announcement');
+        const announcementMedia = interaction.options.getString('announcement_media');
+
+        
+        const addAnnouncementInteractive = !announcement && !announcementMedia;
 
         await this.run(interaction, channel, timeStr, timezone, winners, prize, durationStr, {
             roleReq: roleReq?.id,
@@ -126,14 +133,16 @@ export default {
             thumbnail,
             emoji,
             birthdayUser: birthdayUser?.id,
-            addAnnouncement
+            announcement,
+            announcementMedia,
+            addAnnouncementInteractive
         });
     },
 
     async prefixRun(message: any, args: string[]) {
-        // Fetch global commands to find the ID for /gschedule
-        // This relies on the command being registered. 
-        // We can search the client cache.
+        
+        
+        
         const command = message.client.application.commands.cache.find((c: any) => c.name === 'gschedule');
         const commandId = command ? command.id : '0';
 
@@ -145,7 +154,7 @@ export default {
     },
 
     async run(ctx: any, channel: TextChannel, timeStr: string, timezone: string, winners: number, prize: string, durationStr: string, opts: any) {
-        // Helper to reply or editReply
+        
         const reply = async (msg: any) => {
             if (ctx.deferred || ctx.replied) {
                 return await ctx.editReply(msg);
@@ -154,7 +163,7 @@ export default {
             }
         };
 
-        // Validate Duration
+        
         const validation = validateDuration(durationStr);
         if (!validation.isValid) {
             const msg = { content: `${Emojis.CROSS} ${validation.error}`, ephemeral: true };
@@ -167,18 +176,18 @@ export default {
             return await reply(msg);
         }
 
-        // Parse Start Time with Timezone (convert to UTC milliseconds)
+        
         const startTimeMs = getScheduledTime(timeStr, timezone);
         if (!startTimeMs) {
             const msg = { content: `${Emojis.CROSS} Invalid time or timezone.\n**Time format**: HH:mm\n**Timezone**: Valid IANA Zone (e.g., Asia/Kolkata, UTC)\nYour input: ${timeStr} in ${timezone}`, ephemeral: true };
             return await reply(msg);
         }
 
-        // Check if user wants to add announcement
-        if (opts.addAnnouncement) {
+        
+        if (opts.addAnnouncementInteractive) {
             await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
         } else {
-            // JSON Payload for later execution
+            
             const payload = {
                 duration: durationMs,
                 roleRequirement: opts.roleReq || null,
@@ -190,8 +199,8 @@ export default {
                 thumbnail: opts.thumbnail || null,
                 emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
                 birthdayUser: opts.birthdayUser || null,
-                announcement: null,
-                announcementMedia: null
+                announcement: opts.announcement || null,
+                announcementMedia: opts.announcementMedia || null
             };
 
             await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
@@ -199,7 +208,7 @@ export default {
     },
 
     async handleAnnouncementInput(ctx: ChatInputCommandInteraction, channel: TextChannel, timeStr: string, timezone: string, startTimeMs: number, winners: number, prize: string, durationMs: number, opts: any) {
-        // Show prompt for announcement
+        
         const promptEmbed = new EmbedBuilder()
             .setTitle('📢 Add Giveaway Announcement')
             .setDescription([
@@ -219,7 +228,7 @@ export default {
 
         await ctx.editReply({ embeds: [promptEmbed] });
 
-        // Message Collector
+        
         const filter = (m: Message) => m.author.id === ctx.user.id && m.channel.id === ctx.channel!.id;
         const messageChannel = ctx.channel as TextChannel;
         const collected = await messageChannel.awaitMessages({ filter, max: 1, time: 300000, errors: ['time'] }).catch(() => null);
@@ -235,10 +244,10 @@ export default {
         const announcementText = userMessage.content || '';
         const announcementMedia = userMessage.attachments.first()?.url || null;
 
-        // Delete user message
+        
         await userMessage.delete().catch(() => {});
 
-        // Show Preview
+        
         const previewEmbed = new EmbedBuilder()
             .setTitle('👀 Announcement Preview')
             .setDescription(announcementText || '*No text*')
@@ -270,7 +279,7 @@ export default {
 
         const previewMsg = await ctx.editReply({ embeds: [previewEmbed], components: [row] });
 
-        // Button Collector
+        
         try {
             const selection = await previewMsg.awaitMessageComponent({ 
                 filter: (btn) => btn.user.id === ctx.user.id, 
@@ -298,7 +307,7 @@ export default {
                 await this.saveScheduledGiveaway(selection, channel, startTimeMs, winners, prize, timezone, payload);
             } else if (selection.customId === 'edit_announcement') {
                 await selection.update({ content: '', embeds: [], components: [] });
-                // Retry
+                
                 await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
             } else {
                 const cancelEmbed = new EmbedBuilder()

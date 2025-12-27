@@ -10,12 +10,12 @@ const PAGES = [
         fields: [
             { 
                 name: 'Quick Start', 
-                value: '`/gstart <time> <winners> <prize>`\nStart a giveaway instantly with basic options',
+                value: '`/gstart <prize> <winners> <duration>`\nExample: `/gstart "Nitro" 1 10m`\n\nStart a giveaway instantly with just 3 parameters!',
                 inline: false
             },
             { 
                 name: 'Advanced Creation', 
-                value: '`/gcreate`\nCreate giveaways with requirements, roles, and custom settings',
+                value: '`/gcreate <prize> <winners> <duration> [options...]`\n\nAdd requirements, roles, captcha, and more customization options',
                 inline: false
             },
             { 
@@ -25,7 +25,7 @@ const PAGES = [
             },
             { 
                 name: 'Organization', 
-                value: '`/glist` - View all active giveaways\n`/ghistory` - Complete history with export\n`/grefresh` - Update giveaway embeds\n`/gschedule` - Schedule future giveaways',
+                value: '`/glist` - View all active giveaways\n`/ghistory` - Complete history with export\n`/grefresh` - Update giveaway embeds\n`/gschedule` - Schedule future giveaways with timezone support',
                 inline: false
             }
         ],
@@ -123,7 +123,7 @@ export default {
 
         const collector = message.createMessageComponentCollector({ 
             componentType: ComponentType.Button, 
-            time: 300000 // 5 minutes
+            time: 300000 
         });
 
         collector.on('collect', async (i) => {
@@ -167,7 +167,7 @@ export default {
 
         const collector = msg.createMessageComponentCollector({ 
             componentType: ComponentType.Button, 
-            time: 300000 // 5 minutes
+            time: 300000 
         });
 
         collector.on('collect', async (i: any) => {

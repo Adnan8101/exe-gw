@@ -24,7 +24,7 @@ export async function checkAllRequirements(
         return { passed: false, reason: "Could not fetch member" };
     }
 
-    // Role Requirement
+    
     if (giveaway.roleRequirement) {
         if (!member.roles.cache.has(giveaway.roleRequirement)) {
             return {
@@ -34,7 +34,7 @@ export async function checkAllRequirements(
         }
     }
 
-    // Invite Requirement
+    
     if (giveaway.inviteRequirement > 0) {
         try {
             const invites = await guild.invites.fetch();
@@ -56,7 +56,7 @@ export async function checkAllRequirements(
         }
     }
 
-    // Account Age Requirement
+    
     if (giveaway.accountAgeRequirement > 0) {
         const createdTimestamp = member.user.createdTimestamp;
         const ageDays = Math.floor((Date.now() - createdTimestamp) / (1000 * 60 * 60 * 24));
@@ -69,7 +69,7 @@ export async function checkAllRequirements(
         }
     }
 
-    // Server Age Requirement
+    
     if (giveaway.serverAgeRequirement > 0 && member.joinedTimestamp) {
         const ageDays = Math.floor((Date.now() - member.joinedTimestamp) / (1000 * 60 * 60 * 24));
         if (ageDays < giveaway.serverAgeRequirement) {
@@ -80,7 +80,7 @@ export async function checkAllRequirements(
         }
     }
 
-    // Message Requirement & Voice Requirement
+    
     if (giveaway.messageRequired > 0 || giveaway.voiceRequirement > 0) {
         const stats = await prisma.userStats.findUnique({
             where: {

@@ -5,15 +5,15 @@ const prisma = new PrismaClient();
 
 class Tracker {
     private voiceSessions: Map<string, { guildId: string, joinTime: number }> = new Map();
-    private messageCounts: Map<string, Map<string, number>> = new Map(); // guildId -> userId -> count
-    private blacklistCache: Map<string, Set<string>> = new Map(); // guildId -> Set of channelIds for each type
+    private messageCounts: Map<string, Map<string, number>> = new Map(); 
+    private blacklistCache: Map<string, Set<string>> = new Map(); 
 
     constructor() {
-        // Start flusher - flush every 10 seconds for real-time updates
+        
         setInterval(() => this.flushMessageCounts(), 10 * 1000);
-        // Flush voice minutes every 30 seconds
+        
         setInterval(() => this.flushVoiceMinutes(), 30 * 1000);
-        // Refresh blacklist cache every 5 minutes
+        
         setInterval(() => this.refreshBlacklistCache(), 5 * 60 * 1000);
         this.refreshBlacklistCache();
     }
@@ -32,11 +32,11 @@ class Tracker {
                 }
             }
         } catch (error) {
-            // Blacklist feature not yet migrated
+            
         }
     }
 
-    // Public method to refresh blacklist immediately after changes
+    
     public async forceRefreshBlacklist() {
         await this.refreshBlacklistCache();
     }
@@ -49,7 +49,7 @@ class Tracker {
     public async onMessageCreate(message: Message) {
         if (message.author.bot || !message.guildId || !message.channelId) return;
 
-        // Check if channel is blacklisted for messages
+        
         if (this.isChannelBlacklisted(message.guildId, message.channelId, 'message')) {
             return;
         }
@@ -76,7 +76,7 @@ class Tracker {
 
         const sessionKey = `${guildId}_${userId}`;
 
-        // If user was in voice and moved/left, calculate duration
+        
         if (this.voiceSessions.has(sessionKey)) {
             const session = this.voiceSessions.get(sessionKey)!;
             const durationMs = now - session.joinTime;
@@ -89,7 +89,7 @@ class Tracker {
             this.voiceSessions.delete(sessionKey);
         }
 
-        // If user joined a non-blacklisted voice channel, start tracking
+        
         if (isInVoice) {
             this.voiceSessions.set(sessionKey, {
                 guildId: guildId,
@@ -153,7 +153,7 @@ class Tracker {
         }
     }
 
-    // Get pending message count for a user (not yet flushed to DB)
+    
     public getPendingMessageCount(guildId: string, userId: string): number {
         return this.messageCounts.get(guildId)?.get(userId) || 0;
     }
@@ -167,7 +167,7 @@ class Tracker {
             if (minutes > 0) {
                 const userId = sessionKey.split('_')[1];
                 await this.addVoiceMinutes(session.guildId, userId, minutes);
-                // Reset join time
+                
                 session.joinTime = now;
             }
         }

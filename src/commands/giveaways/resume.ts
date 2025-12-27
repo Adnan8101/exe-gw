@@ -50,7 +50,7 @@ export default {
                 });
             }
 
-            // Calculate how long it was paused and extend the end time
+            
             const pauseDuration = Date.now() - Number((giveaway as any).pausedAt || Date.now());
             const newEndTime = Number(giveaway.endTime) + pauseDuration;
 
@@ -105,7 +105,7 @@ export default {
                 return message.reply(`${Emojis.CROSS} This giveaway is not paused or pause feature not available.`);
             }
 
-            // Calculate how long it was paused and extend the end time
+            
             const pauseDuration = Date.now() - Number((giveaway as any).pausedAt || Date.now());
             const newEndTime = Number(giveaway.endTime) + pauseDuration;
 

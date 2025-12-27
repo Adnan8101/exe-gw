@@ -51,7 +51,7 @@ export default {
 
         try {
             if (type === 'messages') {
-                // Get top 10 users by message count
+                
                 const topUsers = await prisma.userStats.findMany({
                     where: { guildId },
                     orderBy: { messageCount: 'desc' },
@@ -103,7 +103,7 @@ export default {
                 return ctx.channel.send({ embeds: [embed] });
 
             } else if (type === 'invites') {
-                // Get top 10 users by invite count
+                
                 const inviteCounts = await prisma.inviteTracker.groupBy({
                     by: ['inviterId'],
                     where: { guildId },
@@ -164,7 +164,7 @@ export default {
                 return ctx.channel.send({ embeds: [embed] });
 
             } else if (type === 'voice') {
-                // Get top 10 users by voice time
+                
                 const topUsers = await prisma.userStats.findMany({
                     where: { guildId },
                     orderBy: { voiceMinutes: 'desc' },
@@ -191,7 +191,7 @@ export default {
                     const rank = i + 1;
                     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `\`${rank}.\``;
                     
-                    // Format time nicely
+                    
                     const hours = Math.floor(user.voiceMinutes / 60);
                     const minutes = user.voiceMinutes % 60;
                     let timeStr = '';

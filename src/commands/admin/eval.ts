@@ -29,7 +29,7 @@ export default {
                 evaled = require('util').inspect(evaled, { depth: 0 });
             }
 
-            // Truncate if too long
+            
             if (evaled.length > 1900) {
                 evaled = evaled.substring(0, 1900) + '...';
             }
@@ -70,7 +70,7 @@ export default {
                 evaled = require('util').inspect(evaled, { depth: 0 });
             }
 
-            // Truncate if too long
+            
             if (evaled.length > 1900) {
                 evaled = evaled.substring(0, 1900) + '...';
             }

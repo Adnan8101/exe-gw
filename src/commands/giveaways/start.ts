@@ -15,13 +15,13 @@ const prisma = new PrismaClient();
 export default {
     data: new SlashCommandBuilder()
         .setName('gstart')
-        .setDescription('Quick start a giveaway')
+        .setDescription('Quick start a giveaway - Prize, Winners, Duration')
         .addStringOption(option =>
-            option.setName('duration').setDescription('Duration (e.g. 30s, 1m)').setRequired(true))
+            option.setName('prize').setDescription('Prize to give away').setRequired(true))
         .addIntegerOption(option =>
             option.setName('winners').setDescription('Number of winners').setRequired(true))
         .addStringOption(option =>
-            option.setName('prize').setDescription('Prize').setRequired(true)),
+            option.setName('duration').setDescription('Duration (e.g. 30s, 1m, 1h)').setRequired(true)),
 
     requiresPermissions: true,
     
@@ -34,23 +34,57 @@ export default {
             return interaction.reply({ content: `${Emojis.CROSS} You need Manage Server permissions or the giveaway manager role to start giveaways.`, ephemeral: true });
         }
 
-        const durationStr = interaction.options.getString('duration', true);
-        const winners = interaction.options.getInteger('winners', true);
         const prize = interaction.options.getString('prize', true);
+        const winners = interaction.options.getInteger('winners', true);
+        const durationStr = interaction.options.getString('duration', true);
         const channel = interaction.channel as TextChannel;
 
         await this.run(interaction, channel, durationStr, winners, prize);
     },
 
     async prefixRun(message: any, args: string[]) {
-        // !gstart 10m 1 Prize Name
+        
         if (args.length < 3) {
-            return message.reply(`${Emojis.CROSS} Usage: \`!gstart <duration> <winners> <prize>\`\nExample: \`!gstart 10m 1 Nitro Classic\``);
+            return message.reply(`${Emojis.CROSS} Usage: \`!gstart <prize> <winners> <duration>\`\nExample: \`!gstart "Nitro Classic" 1 10m\``);
         }
 
-        const durationStr = args[0];
-        const winners = parseInt(args[1]);
-        const prize = args.slice(2).join(' ');
+        
+        let prize: string;
+        let winners: number;
+        let durationStr: string;
+
+        
+        if (args[0].startsWith('"') || args[0].startsWith("'")) {
+            
+            const quoteChar = args[0][0];
+            let prizeEnd = 0;
+            let prizeStr = args[0].substring(1);
+            
+            for (let i = 1; i < args.length; i++) {
+                if (args[i].endsWith(quoteChar)) {
+                    prizeStr += ' ' + args[i].substring(0, args[i].length - 1);
+                    prizeEnd = i;
+                    break;
+                } else {
+                    prizeStr += ' ' + args[i];
+                }
+            }
+            
+            if (prizeEnd === 0) {
+                prize = args.slice(0, -2).join(' ');
+                winners = parseInt(args[args.length - 2]);
+                durationStr = args[args.length - 1];
+            } else {
+                prize = prizeStr;
+                winners = parseInt(args[prizeEnd + 1]);
+                durationStr = args[prizeEnd + 2];
+            }
+        } else {
+            
+            durationStr = args[args.length - 1];
+            winners = parseInt(args[args.length - 2]);
+            prize = args.slice(0, -2).join(' ');
+        }
 
         if (isNaN(winners)) {
             return message.reply(`${Emojis.CROSS} Invalid winner count.`);
@@ -60,7 +94,7 @@ export default {
     },
 
     async run(ctx: any, channel: TextChannel, durationStr: string, winners: number, prize: string) {
-        // Validate duration
+        
         const validation = validateDuration(durationStr);
         if (!validation.isValid) {
             const msg = `${Emojis.CROSS} ${validation.error}`;
@@ -68,7 +102,7 @@ export default {
             return;
         }
 
-        // Calculate end time using centralized utility (UTC)
+        
         const endTimeMs = calculateEndTimeFromString(durationStr);
         if (!endTimeMs) {
             const msg = `${Emojis.CROSS} Invalid duration format. Use: 30s, 2m, 1h, 7d`;
@@ -85,13 +119,13 @@ export default {
             hostId: hostId,
             prize: prize,
             winnersCount: winners,
-            endTime: toBigInt(endTimeMs), // Use centralized time utility with UTC
+            endTime: toBigInt(endTimeMs), 
             createdAt: toBigInt(Date.now()),
             emoji: "<a:Exe_Gw:1454033571273506929>"
         };
 
         try {
-            // For slash commands, use ephemeral replies
+            
             if (ctx.deferReply) await ctx.deferReply({ ephemeral: true });
 
             const gForEmbed: any = { ...giveawayData, messageId: "", id: 0 };
@@ -109,21 +143,21 @@ export default {
 
             const successMsg = `${Emojis.TICK} Giveaway started in ${channel}!`;
             
-            // For slash commands - send ephemeral reply
+            
             if (ctx.editReply) {
                 await ctx.editReply(successMsg);
             } 
-            // For prefix commands - send reply then delete both messages
+            
             else {
                 const reply = await ctx.reply(successMsg);
                 
-                // Delete command message and success message after 3 seconds
+                
                 setTimeout(async () => {
                     try {
                         await ctx.delete().catch(() => {});
                         await reply.delete().catch(() => {});
                     } catch (e) {
-                        // Ignore deletion errors
+                        
                     }
                 }, 3000);
             }

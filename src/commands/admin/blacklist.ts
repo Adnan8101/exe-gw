@@ -86,13 +86,13 @@ export default {
             return message.channel.send({ embeds: [embed] });
         }
 
-        // Get channel from mention, ID, or name
+        
         let channel = message.mentions.channels.first();
         if (!channel && args[2]) {
-            // Try to get by ID
+            
             channel = message.guild.channels.cache.get(args[2]);
             
-            // If not found, try by name (case insensitive)
+            
             if (!channel) {
                 const channelName = args.slice(2).join(' ').toLowerCase();
                 channel = message.guild.channels.cache.find((ch: any) => 
@@ -128,12 +128,12 @@ export default {
 
                 let channel = channelArg;
                 
-                // If no channel found and we have input, try to find it
+                
                 if (!channel && channelInput && !isInteraction) {
-                    // Try by ID
+                    
                     channel = ctx.guild.channels.cache.get(channelInput);
                     
-                    // Try by name
+                    
                     if (!channel) {
                         const channelName = channelInput.toLowerCase();
                         channel = ctx.guild.channels.cache.find((ch: any) => 
@@ -151,7 +151,7 @@ export default {
                     return ctx.channel.send({ embeds: [embed] });
                 }
 
-                // Validate channel type
+                
                 if (type === 'voice' && channel.type !== ChannelType.GuildVoice) {
                     const embed = new EmbedBuilder()
                         .setDescription(`${Emojis.CROSS} You can only blacklist voice channels for voice tracking.`)
@@ -170,7 +170,7 @@ export default {
                     return ctx.channel.send({ embeds: [embed] });
                 }
 
-                // Check if already blacklisted
+                
                 const existing = await (prisma as any).blacklistChannel?.findUnique({
                     where: {
                         guildId_channelId_type: {
@@ -198,7 +198,7 @@ export default {
                     }
                 });
 
-                // Refresh blacklist cache immediately
+                
                 await tracker.forceRefreshBlacklist();
 
                 const successEmbed = new EmbedBuilder()
@@ -221,12 +221,12 @@ export default {
 
                 let channel2 = channelArg;
                 
-                // If no channel found and we have input, try to find it
+                
                 if (!channel2 && channelInput && !isInteraction) {
-                    // Try by ID
+                    
                     channel2 = ctx.guild.channels.cache.get(channelInput);
                     
-                    // Try by name
+                    
                     if (!channel2) {
                         const channelName = channelInput.toLowerCase();
                         channel2 = ctx.guild.channels.cache.find((ch: any) => 
@@ -273,7 +273,7 @@ export default {
                     }
                 });
 
-                // Refresh blacklist cache immediately
+                
                 await tracker.forceRefreshBlacklist();
 
                 const removeEmbed = new EmbedBuilder()
@@ -302,7 +302,7 @@ export default {
                     return ctx.channel.send({ embeds: [embed] });
                 }
 
-                // Group by type
+                
                 const messageChannels: string[] = [];
                 const voiceChannels: string[] = [];
 

@@ -28,7 +28,7 @@ export default {
 
         const voiceMinutes = stats?.voiceMinutes || 0;
         
-        // Format time nicely
+        
         const hours = Math.floor(voiceMinutes / 60);
         const minutes = voiceMinutes % 60;
         const days = Math.floor(hours / 24);
@@ -67,7 +67,7 @@ export default {
 
         const voiceMinutes = stats?.voiceMinutes || 0;
         
-        // Format time nicely
+        
         const hours = Math.floor(voiceMinutes / 60);
         const minutes = voiceMinutes % 60;
         const days = Math.floor(hours / 24);

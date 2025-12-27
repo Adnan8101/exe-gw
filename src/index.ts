@@ -30,7 +30,7 @@ const inviteService = new InviteService(client);
 
 const commands = new Collection<string, any>();
 
-// Dynamic Command Loading
+
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -41,7 +41,7 @@ for (const folder of commandFolders) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'));
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        
         const command = require(filePath).default;
         if ('data' in command && 'execute' in command) {
             commands.set(command.data.name, command);
@@ -55,22 +55,22 @@ client.once('ready', async () => {
     console.log(`Logged in as ${client.user?.tag}!`);
     console.log(`Serving ${client.guilds.cache.size} guilds`);
 
-    // Set bot activity/presence
+    
     client.user?.setPresence({
         activities: [{
             name: '🎉 Managing Giveaways in /exeop',
-            type: 3 // Watching
+            type: 3 
         }],
         status: 'online'
     });
 
-    // Cache invites for all guilds
+    
     for (const [id, guild] of client.guilds.cache) {
         await inviteService.cacheGuildInvites(guild);
     }
     console.log("Invites cached.");
 
-    // Deploy commands
+    
     const data = commands.map(c => c.data.toJSON());
     try {
         await client.application?.commands.set(data);
@@ -79,7 +79,7 @@ client.once('ready', async () => {
         console.error("Error registering commands:", error);
     }
 
-    // Start Scheduler
+    
     const scheduler = new SchedulerService(client);
     scheduler.start();
 });
@@ -88,7 +88,7 @@ const OWNER_ID = '929297205796417597';
 
 client.on('interactionCreate', async interaction => {
     if (interaction.isChatInputCommand()) {
-        // Check if guild is allowed (except for guildmanage command and owner)
+        
         if (interaction.guildId && interaction.commandName !== 'guildmanage' && interaction.user.id !== OWNER_ID) {
             try {
                 const isAllowed = await prisma.allowedGuild.findUnique({
@@ -126,7 +126,7 @@ client.on('interactionCreate', async interaction => {
             await command.execute(interaction);
         } catch (error: any) {
             console.error(error);
-            // Provide specific error messages instead of generic ones
+            
             let errorMessage = '❌ An unexpected error occurred while executing this command.';
             if (error.code === 50013) {
                 errorMessage = '❌ I don\'t have the required permissions to perform this action. Please check my role hierarchy and permissions.';
@@ -169,8 +169,8 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot || !message.guild) return;
 
-    // Check if guild is allowed (check early to avoid processing unauthorized guilds)
-    // Skip check for owner
+    
+    
     if (message.author.id !== OWNER_ID) {
         try {
             const isAllowed = await prisma.allowedGuild.findUnique({
@@ -178,7 +178,7 @@ client.on('messageCreate', async (message) => {
             });
 
             if (!isAllowed) {
-                // Only respond to direct bot mentions in unauthorized guilds
+                
                 const botMention = `<@${client.user?.id}>`;
                 const botMentionNickname = `<@!${client.user?.id}>`;
                 if (message.content === botMention || message.content === botMentionNickname) {
@@ -199,14 +199,14 @@ client.on('messageCreate', async (message) => {
 
                     return message.reply({ embeds: [embed], components: [row] });
                 }
-                return; // Don't process any commands in unauthorized guilds
+                return; 
             }
         } catch (error) {
             console.error('Error checking guild authorization:', error);
         }
     }
 
-    // Check for bot mention (not @everyone, @here, or role mention)
+    
     const botMention = `<@${client.user?.id}>`;
     const botMentionNickname = `<@!${client.user?.id}>`;
     if (message.content === botMention || message.content === botMentionNickname) {
@@ -221,7 +221,7 @@ client.on('messageCreate', async (message) => {
         return message.reply(`My prefix is \`${prefix}\`\nBegin with \`${prefix}ghelp\``);
     }
 
-    // Check if user is in no-prefix list
+    
     let isNoPrefixUser = false;
     try {
         const noPrefixUser = await (prisma as any).noPrefixUser?.findUnique({
@@ -229,10 +229,10 @@ client.on('messageCreate', async (message) => {
         });
         isNoPrefixUser = !!noPrefixUser;
     } catch (e) { 
-        // No-prefix feature not available yet (table doesn't exist)
+        
     }
 
-    // 1. Determine Prefix
+    
     let prefix = '!';
     try {
         const config = await prisma.giveawayConfig.findUnique({
@@ -243,10 +243,10 @@ client.on('messageCreate', async (message) => {
         if (config?.prefix) prefix = config.prefix;
     } catch (e) { }
 
-    // If not a no-prefix user, require prefix
+    
     if (!isNoPrefixUser && !message.content.startsWith(prefix)) return;
 
-    // Parse command (with or without prefix)
+    
     const content = isNoPrefixUser && !message.content.startsWith(prefix) 
         ? message.content 
         : message.content.slice(prefix.length);
@@ -256,22 +256,22 @@ client.on('messageCreate', async (message) => {
 
     if (!commandName) return;
 
-    // Map aliases to command names - only for prefix commands
-    // These aliases ONLY work when used with the prefix, not as standalone words
+    
+    
     const aliasMap: { [key: string]: string } = {
         'm': 'messages',
         'i': 'invites',
         'es': 'invites'
     };
 
-    // For no-prefix users typing without prefix, don't match single letter aliases
-    // They must use the full command name or the prefix + alias
+    
+    
     let actualCommandName: string;
     if (isNoPrefixUser && !message.content.startsWith(prefix)) {
-        // No-prefix mode: only match full command names, not aliases
+        
         actualCommandName = commandName;
     } else {
-        // Prefix mode: aliases are allowed
+        
         actualCommandName = aliasMap[commandName] || commandName;
     }
 
@@ -279,22 +279,22 @@ client.on('messageCreate', async (message) => {
 
     if (!command) return;
 
-    // Define public commands (no permission check)
+    
     const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting', 'badge', 'bgs'];
     const isPublicCommand = publicCommands.includes(actualCommandName);
 
-    // Only run if command supports prefixRun
+    
     if (typeof command.prefixRun === 'function') {
         try {
-            // For restricted commands, check permissions silently
+            
             if (!isPublicCommand && command.requiresPermissions) {
                 const hasPerms = await command.checkPermissions?.(message);
-                if (hasPerms === false) return; // Silent fail - no reply
+                if (hasPerms === false) return; 
             }
             await command.prefixRun(message, args);
         } catch (error: any) {
             console.error(error);
-            // Provide specific error messages instead of generic ones
+            
             let errorMessage = '❌ An unexpected error occurred.';
             if (error.code === 50013) {
                 errorMessage = '❌ I don\'t have the required permissions to perform this action.';
@@ -328,7 +328,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
     handleReactionRemove(reaction as any, user as any, client);
 });
 
-// Invite Events
+
 client.on('inviteCreate', (invite) => {
     if (invite.guild) {
         inviteService.cacheGuildInvites(invite.guild as any);
@@ -349,8 +349,8 @@ client.on('guildMemberRemove', (member) => {
     inviteService.onMemberRemove(member);
 });
 
-// Helper to check for ended giveaways
-// Helper to check for ended giveaways
+
+
 const checkGiveaways = async () => {
     try {
         const endedGiveaways = await prisma.giveaway.findMany({
@@ -374,10 +374,10 @@ const checkGiveaways = async () => {
     }
 };
 
-// Run immediately on startup for recovery
+
 checkGiveaways();
 
-// Then polling
+
 setInterval(checkGiveaways, 5000);
 
 client.login(process.env.DISCORD_TOKEN);

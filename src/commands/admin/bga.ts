@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 
 const OWNER_ID = '929297205796417597';
 
-// Badge definitions
+
 const BADGES: { [key: string]: { name: string; emoji: string; description: string } } = {
     'es': {
         name: 'Early Supporter',
@@ -76,7 +76,7 @@ export default {
 
     async prefixRun(message: Message, args: string[]) {
         if (message.author.id !== OWNER_ID) {
-            return; // Silent fail for non-owners
+            return; 
         }
 
         const badge = args[0]?.toLowerCase();
@@ -102,7 +102,7 @@ export default {
             return message.reply({ embeds: [embed] });
         }
 
-        // Get target user
+        
         let targetUser: User | null = null;
         if (message.mentions.users.first()) {
             targetUser = message.mentions.users.first()!;
@@ -110,7 +110,7 @@ export default {
             try {
                 targetUser = await message.client.users.fetch(userArg);
             } catch {
-                // Try to find by username
+                
                 const guilds = message.client.guilds.cache;
                 for (const [, guild] of guilds) {
                     const member = guild.members.cache.find(m => 
