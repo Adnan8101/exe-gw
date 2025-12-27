@@ -77,10 +77,12 @@ export default {
             option.setName('custom_emoji').setDescription('Custom emoji'))
         .addUserOption(option =>
             option.setName('birthday_user').setDescription('User to wish happy birthday to'))
+        .addBooleanOption(option =>
+            option.setName('announce').setDescription('Add announcement message (True/False)'))
         .addStringOption(option =>
-            option.setName('announcement').setDescription('Announcement text to post before giveaway starts'))
+            option.setName('announcement').setDescription('Announcement text (if announce is true)'))
         .addStringOption(option =>
-            option.setName('announcement_media').setDescription('Media URL (image/gif) for announcement')),
+            option.setName('announcement_media').setDescription('Media URL for announcement (if announce is true)')),
 
     async autocomplete(interaction: AutocompleteInteraction) {
         const focusedValue = interaction.options.getFocused();
@@ -115,6 +117,7 @@ export default {
         const thumbnail = interaction.options.getString('thumbnail');
         const emoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
         const birthdayUser = interaction.options.getUser('birthday_user');
+        const announce = interaction.options.getBoolean('announce') || false;
         const announcement = interaction.options.getString('announcement');
         const announcementMedia = interaction.options.getString('announcement_media');
 
@@ -128,6 +131,7 @@ export default {
             thumbnail,
             emoji,
             birthdayUser: birthdayUser?.id,
+            announce,
             announcement,
             announcementMedia
         });
@@ -178,8 +182,8 @@ export default {
         }
 
         
-        if (!opts.announcement && !opts.announcementMedia) {
-            await this.promptForAnnouncement(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
+        if (opts.announce && !opts.announcement && !opts.announcementMedia) {
+            await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
         } else {
             
             const payload = {
@@ -195,87 +199,6 @@ export default {
                 birthdayUser: opts.birthdayUser || null,
                 announcement: opts.announcement || null,
                 announcementMedia: opts.announcementMedia || null
-            };
-
-            await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
-        }
-    },
-
-    async promptForAnnouncement(ctx: ChatInputCommandInteraction, channel: TextChannel, timeStr: string, timezone: string, startTimeMs: number, winners: number, prize: string, durationMs: number, opts: any) {
-        const promptEmbed = new EmbedBuilder()
-            .setTitle('📢 Add Giveaway Announcement?')
-            .setDescription([
-                'Would you like to add an announcement message that will be posted when the giveaway starts?',
-                '',
-                '**Announcements can include:**',
-                '• Text message',
-                '• Images or GIFs',
-                '',
-                '💡 *Choose below to continue*'
-            ].join('\n'))
-            .setColor(Theme.EmbedColor);
-
-        const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('add_announcement')
-                    .setLabel('Yes, Add Announcement')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('📢'),
-                new ButtonBuilder()
-                    .setCustomId('skip_announcement')
-                    .setLabel('No, Skip')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji('⏭️')
-            );
-
-        const promptMsg = await ctx.editReply({ embeds: [promptEmbed], components: [row] });
-
-        try {
-            const selection = await promptMsg.awaitMessageComponent({ 
-                filter: (btn) => btn.user.id === ctx.user.id, 
-                time: 180000,
-                componentType: ComponentType.Button
-            });
-
-            if (selection.customId === 'add_announcement') {
-                await selection.deferUpdate();
-                await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
-            } else {
-                
-                const payload = {
-                    duration: durationMs,
-                    roleRequirement: opts.roleReq || null,
-                    inviteRequirement: opts.inviteReq || 0,
-                    captchaRequirement: opts.captchaReq || false,
-                    winnerRole: opts.winnerRole || null,
-                    assignRole: opts.assignRole || null,
-                    customMessage: opts.customMessage || null,
-                    thumbnail: opts.thumbnail || null,
-                    emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
-                    birthdayUser: opts.birthdayUser || null,
-                    announcement: null,
-                    announcementMedia: null
-                };
-
-                await selection.deferUpdate();
-                await this.saveScheduledGiveaway(selection, channel, startTimeMs, winners, prize, timezone, payload);
-            }
-        } catch (e) {
-            
-            const payload = {
-                duration: durationMs,
-                roleRequirement: opts.roleReq || null,
-                inviteRequirement: opts.inviteReq || 0,
-                captchaRequirement: opts.captchaReq || false,
-                winnerRole: opts.winnerRole || null,
-                assignRole: opts.assignRole || null,
-                customMessage: opts.customMessage || null,
-                thumbnail: opts.thumbnail || null,
-                emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
-                birthdayUser: opts.birthdayUser || null,
-                announcement: null,
-                announcementMedia: null
             };
 
             await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);

@@ -20,7 +20,7 @@ export default {
         
         .addStringOption(option =>
             option.setName('prize')
-                .setDescription('The prize to give away')
+                .setDescription('Prize to give away')
                 .setRequired(true))
         .addIntegerOption(option =>
             option.setName('winners')

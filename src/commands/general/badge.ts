@@ -37,7 +37,7 @@ const BADGES: { [key: string]: { name: string; emoji: string; description: strin
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('bgs')
+        .setName('badge')
         .setDescription('View your badges or another user\'s badges')
         .addUserOption(option =>
             option.setName('user')

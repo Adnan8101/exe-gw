@@ -1,11 +1,12 @@
 import { prisma } from './utils/database';
 
-import { Client, GatewayIntentBits, Collection } from 'discord.js';
+import { Client, GatewayIntentBits, Collection, EmbedBuilder } from 'discord.js';
 import { GiveawayService } from './services/GiveawayService';
 import { tracker } from './services/Tracker';
 import { InviteService } from './services/InviteService';
 import { SchedulerService } from './services/SchedulerService';
 import { handleReactionAdd, handleReactionRemove } from './events/reactionHandler';
+import { getSimilarCommands } from './utils/commandSuggestions';
 
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
@@ -120,7 +121,22 @@ client.on('interactionCreate', async interaction => {
 
         const command = commands.get(interaction.commandName);
 
-        if (!command) return;
+        if (!command) {
+            const allCommands = Array.from(commands.keys());
+            const suggestions = getSimilarCommands(interaction.commandName, allCommands);
+            
+            let message = `❌ No command found \`${interaction.commandName}\``;
+            
+            if (suggestions.length > 0) {
+                message += '\n\n**Did you mean?**\n' + suggestions.map(cmd => `• \`/${cmd}\``).join('\n');
+            }
+            
+            const embed = new EmbedBuilder()
+                .setDescription(message)
+                .setColor(0xFF0000);
+            
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
 
         try {
             await command.execute(interaction);
@@ -277,7 +293,26 @@ client.on('messageCreate', async (message) => {
 
     const command = commands.get(actualCommandName);
 
-    if (!command) return;
+    if (!command) {
+        const allCommands = Array.from(commands.keys());
+        const allAliases = Object.keys(aliasMap);
+        const allOptions = [...allCommands, ...allAliases];
+        const suggestions = getSimilarCommands(commandName, allOptions);
+        
+        if (suggestions.length > 0) {
+            const suggestionText = suggestions.map(cmd => {
+                const resolvedCmd = aliasMap[cmd] || cmd;
+                return `\`${prefix}${cmd}\``;
+            }).join(', ');
+            
+            const embed = new EmbedBuilder()
+                .setDescription(` No command found \`${prefix}${commandName}\`\n\n**Did you mean?**\n${suggestionText}`)
+                .setColor(0xFF0000);
+            
+            return message.reply({ embeds: [embed] });
+        }
+        return;
+    }
 
     
     const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting', 'badge', 'bgs'];
