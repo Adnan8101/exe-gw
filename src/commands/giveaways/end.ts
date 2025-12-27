@@ -7,6 +7,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gend')
         .setDescription('End a giveaway immediately')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addStringOption(option =>
             option.setName('message_id').setDescription('Message ID of the giveaway').setRequired(true)),
 

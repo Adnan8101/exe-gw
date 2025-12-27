@@ -41,6 +41,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('bga')
         .setDescription('Add a badge to a user (Owner Only)')
+        .setDefaultMemberPermissions(0)
         .addStringOption(option =>
             option.setName('badge')
                 .setDescription('Badge type')
@@ -54,11 +55,7 @@ export default {
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('Target user')
-                .setRequired(true))
-        .addUserOption(option =>
-            option.setName('user')
-                .setDescription('Target user')
-                .setRequired(false)),
+                .setRequired(true)),
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (interaction.user.id !== OWNER_ID) {

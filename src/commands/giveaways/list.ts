@@ -7,7 +7,8 @@ import { prisma } from '../../utils/database';
 export default {
     data: new SlashCommandBuilder()
         .setName('glist')
-        .setDescription('List all running and scheduled giveaways'),
+        .setDescription('List all running and scheduled giveaways')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (!await hasGiveawayPermissions(interaction)) {

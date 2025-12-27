@@ -1,6 +1,6 @@
 import { prisma } from '../../utils/database';
 
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { GiveawayService } from '../../services/GiveawayService';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
@@ -10,6 +10,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gcancel')
         .setDescription('Cancel a giveaway')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addStringOption(option =>
             option.setName('message_id')
                 .setDescription('The message ID of the giveaway')

@@ -7,6 +7,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('changeactivity')
         .setDescription('Change bot activity status (Developer only)')
+        .setDefaultMemberPermissions(0)
         .addStringOption(option =>
             option.setName('activity')
                 .setDescription('The activity text to display')

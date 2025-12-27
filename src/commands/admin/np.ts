@@ -10,6 +10,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('np')
         .setDescription('Manage no-prefix users (Owner only)')
+        .setDefaultMemberPermissions(0)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('add')

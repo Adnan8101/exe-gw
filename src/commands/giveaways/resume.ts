@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits } from 'discord.js';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
 import { prisma } from '../../utils/database';
@@ -7,6 +7,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gresume')
         .setDescription('Resume a paused giveaway')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addStringOption(option =>
             option.setName('message_id')
                 .setDescription('The message ID of the giveaway')

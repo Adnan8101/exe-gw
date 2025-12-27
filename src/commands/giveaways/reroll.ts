@@ -6,8 +6,7 @@ import { Emojis } from '../../utils/emojis';
 export default {
     data: new SlashCommandBuilder()
         .setName('greroll')
-        .setDescription('Reroll a winner for an ended giveaway')
-        .addStringOption(option =>
+        .setDescription('Reroll a winner for an ended giveaway')        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)        .addStringOption(option =>
             option.setName('message_id').setDescription('Message ID of the giveaway').setRequired(true)),
 
     async execute(interaction: ChatInputCommandInteraction) {

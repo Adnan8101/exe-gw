@@ -11,6 +11,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('grefresh')
         .setDescription('Refresh giveaway embed(s) with updated UI')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addStringOption(option =>
             option.setName('target')
                 .setDescription('Refresh all giveaways or specific message ID')

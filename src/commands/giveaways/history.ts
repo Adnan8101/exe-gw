@@ -7,7 +7,8 @@ import {
     ActionRowBuilder, 
     ButtonBuilder, 
     ButtonStyle,
-    AttachmentBuilder
+    AttachmentBuilder,
+    PermissionFlagsBits
 } from 'discord.js';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
@@ -20,6 +21,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('ghistory')
         .setDescription('View giveaway history for this server')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addBooleanOption(option =>
             option.setName('export')
                 .setDescription('Export history to Excel file')

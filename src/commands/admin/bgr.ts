@@ -41,6 +41,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('bgr')
         .setDescription('Remove a badge from a user (Owner Only)')
+        .setDefaultMemberPermissions(0)
         .addStringOption(option =>
             option.setName('badge')
                 .setDescription('Badge type')

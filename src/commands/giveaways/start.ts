@@ -16,6 +16,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gstart')
         .setDescription('Quick start a giveaway - Prize, Winners, Duration')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addStringOption(option =>
             option.setName('prize').setDescription('Prize to give away').setRequired(true))
         .addIntegerOption(option =>

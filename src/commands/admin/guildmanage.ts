@@ -10,6 +10,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('guildmanage')
         .setDescription('Manage allowed guilds (Developer only)')
+        .setDefaultMemberPermissions(0)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('add')
