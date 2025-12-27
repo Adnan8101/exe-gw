@@ -12,8 +12,14 @@ export default {
         await interaction.deferReply();
         const apiLatency = Date.now() - sent;
         
-        const wsPing = interaction.client.ws.ping;
-        const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : 'Calculating...';
+        let wsPing = interaction.client.ws.ping;
+        
+        if (wsPing <= 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            wsPing = interaction.client.ws.ping;
+        }
+        
+        const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : 'N/A';
         
         const embed = new EmbedBuilder()
             .setTitle('Ping')
@@ -32,8 +38,14 @@ export default {
         const reply = await message.reply('Calculating ping...');
         const apiLatency = Date.now() - sent;
         
-        const wsPing = message.client.ws.ping;
-        const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : 'Calculating...';
+        let wsPing = message.client.ws.ping;
+        
+        if (wsPing <= 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            wsPing = message.client.ws.ping;
+        }
+        
+        const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : 'N/A';
         
         const embed = new EmbedBuilder()
             .setTitle('Ping')
