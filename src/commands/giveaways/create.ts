@@ -154,7 +154,13 @@ export default {
                 }
             });
 
-            await interaction.editReply(`${Emojis.TICK} Giveaway created successfully in ${channel}!`);
+            const reply = await interaction.editReply(`${Emojis.TICK} Giveaway created successfully in ${channel}!`);
+            
+            setTimeout(async () => {
+                try {
+                    await interaction.deleteReply().catch(() => {});
+                } catch (e) { }
+            }, 3000);
 
         } catch (error) {
             console.error(error);

@@ -36,13 +36,28 @@ export default {
                 try {
                     await service.deleteScheduledGiveaway(id);
                     const msg = `${Emojis.TICK} Scheduled giveaway **#${id}** cancelled and deleted.`;
-                    if (ctx.reply) return ctx.reply({ content: msg, ephemeral: true });
+                    if (ctx.reply) {
+                        const reply = await ctx.reply({ content: msg, ephemeral: true });
+                        setTimeout(async () => {
+                            try {
+                                if (ctx.deleteReply) await ctx.deleteReply().catch(() => {});
+                            } catch (e) { }
+                        }, 3000);
+                        return;
+                    }
                 } catch (e) { }
             }
 
             await service.deleteGiveaway(inputId);
             const msg = `${Emojis.TICK} Giveaway deleted.`;
-            if (ctx.reply) await ctx.reply({ content: msg, ephemeral: true });
+            if (ctx.reply) {
+                await ctx.reply({ content: msg, ephemeral: true });
+                setTimeout(async () => {
+                    try {
+                        if (ctx.deleteReply) await ctx.deleteReply().catch(() => {});
+                    } catch (e) { }
+                }, 3000);
+            }
         } catch (error) {
             console.error(error);
             const msg = `${Emojis.CROSS} Failed to delete giveaway. Check ID.`;

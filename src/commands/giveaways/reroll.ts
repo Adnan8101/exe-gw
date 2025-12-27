@@ -33,8 +33,15 @@ export default {
         try {
             const winners = await service.rerollGiveaway(messageId);
             if (winners.length > 0) {
-                const msg = `${Emojis.TICK} Rerolled! New winner(s): ${winners.map(w => `<@${w}>`).join(', ')}`;
-                if (ctx.reply) await ctx.reply({ content: msg, ephemeral: true });
+                const msg = `${Emojis.TICK} Successfully rerolled!`;
+                if (ctx.reply) {
+                    await ctx.reply({ content: msg, ephemeral: true });
+                    setTimeout(async () => {
+                        try {
+                            if (ctx.deleteReply) await ctx.deleteReply().catch(() => {});
+                        } catch (e) { }
+                    }, 3000);
+                }
             } else {
                 const msg = `${Emojis.CROSS} Could not find a new winner.`;
                 if (ctx.reply) await ctx.reply({ content: msg, ephemeral: true });

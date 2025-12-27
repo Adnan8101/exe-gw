@@ -205,7 +205,18 @@ export class GiveawayService {
         if (winner.length > 0) {
             const channel = this.client.channels.cache.get(giveaway.channelId) as TextChannel;
             if (channel) {
-                await channel.send(`🎉 New winner: <@${winner[0]}>! You won **${giveaway.prize}**!`);
+                const row = new ActionRowBuilder<ButtonBuilder>()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setLabel('Giveaway Link')
+                            .setStyle(ButtonStyle.Link)
+                            .setURL(`https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId}`)
+                    );
+
+                await channel.send({
+                    content: `Congrats, <@${winner[0]}> you have won **${giveaway.prize}**\nhosted by <@${giveaway.hostId}>`,
+                    components: [row]
+                });
             }
         }
         return winner;
