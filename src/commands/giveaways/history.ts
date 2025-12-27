@@ -1,3 +1,5 @@
+import { prisma } from '../../utils/database';
+
 import { 
     SlashCommandBuilder, 
     ChatInputCommandInteraction, 
@@ -7,13 +9,11 @@ import {
     ButtonStyle,
     AttachmentBuilder
 } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
 import { Theme } from '../../utils/theme';
 import ExcelJS from 'exceljs';
 
-const prisma = new PrismaClient();
 const ITEMS_PER_PAGE = 5;
 
 export default {

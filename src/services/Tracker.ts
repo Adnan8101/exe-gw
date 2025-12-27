@@ -1,7 +1,7 @@
-import { Client, Message, VoiceState } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
-const prisma = new PrismaClient();
+import { Client, Message, VoiceState } from 'discord.js';
+
 
 class Tracker {
     private voiceSessions: Map<string, { guildId: string, joinTime: number }> = new Map();

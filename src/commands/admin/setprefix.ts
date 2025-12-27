@@ -1,9 +1,9 @@
+import { prisma } from '../../utils/database';
+
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, Message, EmbedBuilder } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { Emojis } from '../../utils/emojis';
 import { Theme } from '../../utils/theme';
 
-const prisma = new PrismaClient();
 
 async function setPrefixLogic(guildId: string, newPrefix: string): Promise<string> {
     await prisma.giveawayConfig.upsert({

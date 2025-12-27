@@ -1,7 +1,7 @@
-import { CommandInteraction, PermissionFlagsBits, GuildMember, Message } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './database';
 
-const prisma = new PrismaClient();
+import { CommandInteraction, PermissionFlagsBits, GuildMember, Message } from 'discord.js';
+
 
 export async function hasGiveawayPermissions(interaction: CommandInteraction): Promise<boolean> {
     const member = interaction.member as GuildMember;

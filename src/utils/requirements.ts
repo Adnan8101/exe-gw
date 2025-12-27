@@ -1,7 +1,7 @@
-import { Client, GuildMember } from 'discord.js';
-import { PrismaClient, Giveaway } from '@prisma/client';
+import { prisma } from './database';
 
-const prisma = new PrismaClient();
+import { Client, GuildMember } from 'discord.js';
+
 
 export interface RequirementResult {
     passed: boolean;

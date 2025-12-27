@@ -1,5 +1,6 @@
+import { prisma } from './utils/database';
+
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { GiveawayService } from './services/GiveawayService';
 import { tracker } from './services/Tracker';
 import { InviteService } from './services/InviteService';
@@ -24,7 +25,6 @@ const client = new Client({
     ]
 });
 
-const prisma = new PrismaClient();
 const giveawayService = new GiveawayService(client);
 const inviteService = new InviteService(client);
 

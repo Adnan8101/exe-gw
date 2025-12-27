@@ -1,9 +1,9 @@
+import { prisma } from '../utils/database';
+
 import { Client, TextChannel } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { GiveawayService } from './GiveawayService';
 import { getNowUTC, hasEnded, toBigInt } from '../utils/timeUtils';
 
-const prisma = new PrismaClient();
 
 
 const preCalculatedGiveaways: Set<string> = new Set();

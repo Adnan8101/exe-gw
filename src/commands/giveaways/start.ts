@@ -1,5 +1,6 @@
+import { prisma } from '../../utils/database';
+
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, TextChannel } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { createGiveawayEmbed } from '../../utils/embeds';
 import { hasGiveawayPermissions, hasGiveawayPermissionsMessage } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
@@ -10,7 +11,6 @@ import {
     toBigInt 
 } from '../../utils/timeUtils';
 
-const prisma = new PrismaClient();
 
 export default {
     data: new SlashCommandBuilder()

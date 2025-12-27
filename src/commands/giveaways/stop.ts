@@ -1,9 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../utils/database';
 
 export default {
     data: new SlashCommandBuilder()

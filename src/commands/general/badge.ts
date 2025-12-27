@@ -1,3 +1,5 @@
+import { prisma } from '../../utils/database';
+
 import {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
@@ -5,11 +7,9 @@ import {
     Message,
     User
 } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
 
-const prisma = new PrismaClient();
 
 
 const BADGES: { [key: string]: { name: string; emoji: string; description: string } } = {

@@ -1,7 +1,7 @@
-import { Client, Guild, Collection, Invite } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/database';
 
-const prisma = new PrismaClient();
+import { Client, Guild, Collection, Invite } from 'discord.js';
+
 
 export class InviteService {
     private invites: Collection<string, Collection<string, number>> = new Collection(); 

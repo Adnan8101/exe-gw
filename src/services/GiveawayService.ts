@@ -1,8 +1,8 @@
+import { prisma } from '../utils/database';
+
 import { Client, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, Role, GuildMember } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { giveawayEndedEmbed, giveawayCancelledEmbed, createGiveawayEmbed } from '../utils/embeds';
 
-const prisma = new PrismaClient();
 
 
 const preCalculatedWinners: Map<string, { winners: string[], calculatedAt: number }> = new Map();

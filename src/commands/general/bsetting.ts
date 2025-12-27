@@ -1,3 +1,5 @@
+import { prisma } from '../../utils/database';
+
 import {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
@@ -12,11 +14,9 @@ import {
     TextChannel,
     Guild
 } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
 
-const prisma = new PrismaClient();
 
 /**
  * Check if a role can be assigned by the bot (role hierarchy check)

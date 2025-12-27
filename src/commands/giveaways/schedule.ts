@@ -1,5 +1,4 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, TextChannel, AutocompleteInteraction, EmbedBuilder, Message, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ButtonInteraction } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import * as moment from 'moment-timezone';
 import { hasGiveawayPermissions } from '../../utils/permissions';
 import { Emojis } from '../../utils/emojis';
@@ -9,8 +8,7 @@ import {
     validateDuration, 
     toBigInt 
 } from '../../utils/timeUtils';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../utils/database';
 function getScheduledTime(timeStr: string, timezone: string): number | null {
     
     const regex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
