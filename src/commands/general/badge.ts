@@ -74,15 +74,9 @@ export default {
             .setTimestamp();
 
         if (userBadges.length === 0) {
-            embed.setTitle('🏷️ Badges');
-            embed.setDescription('*No badges yet*\n\n> Badges are awarded to special users who support or help improve the bot.');
+            embed.setDescription('**No badges**');
         } else {
-            // Create badge display
-            const badgeIcons = userBadges.map((ub: { badge: string }) => {
-                const badgeInfo = BADGES[ub.badge];
-                return badgeInfo ? badgeInfo.emoji : '🏷️';
-            }).join(' ');
-
+            // Create badge list without title
             const badgeList = userBadges.map((ub: { badge: string }) => {
                 const badgeInfo = BADGES[ub.badge];
                 return badgeInfo 
@@ -90,7 +84,6 @@ export default {
                     : `🏷️ ${ub.badge}`;
             }).join('\n\n');
 
-            embed.setTitle(`🏷️ Badges ${badgeIcons}`);
             embed.setDescription(badgeList);
             embed.setFooter({ text: `${userBadges.length} badge${userBadges.length > 1 ? 's' : ''} earned` });
         }
