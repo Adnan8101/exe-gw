@@ -47,14 +47,16 @@ for (const folder of commandFolders) {
         const commandModule = require(filePath);
         const command = commandModule.default || commandModule;
         
-        // For prefix-only commands (moderation, roles, purge, channel)
-        if ('data' in command && 'execute' in command) {
-            commands.set(command.data.name, {
-                ...command,
-                prefixRun: command.execute // Map execute to prefixRun for prefix commands
-            });
+        // Support both slash commands and prefix commands
+        if ('data' in command) {
+            // Check if it's a slash command (has execute) or prefix command (has prefixRun)
+            if ('execute' in command || 'prefixRun' in command) {
+                commands.set(command.data.name, command);
+            } else {
+                console.log(`[WARNING] The command at ${filePath} has "data" but is missing "execute" or "prefixRun" property.`);
+            }
         } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+            console.log(`[WARNING] The command at ${filePath} is missing a required "data" property.`);
         }
     }
 }
@@ -78,12 +80,17 @@ client.once('ready', async () => {
     }
     console.log("Invites cached.");
 
-    
-    const data = commands.map(c => c.data.toJSON());
+    // Register slash commands only (commands with execute method)
+    const slashCommands = Array.from(commands.values()).filter(cmd => 'execute' in cmd && cmd.data.toJSON);
+    const data = slashCommands.map(c => c.data.toJSON());
     try {
-        console.log(`Registering ${data.length} commands globally...`);
+        console.log(`Registering ${data.length} slash commands globally...`);
         await client.application?.commands.set(data);
-        console.log(`✅ Successfully registered ${data.length} commands globally.`);
+        console.log(`✅ Successfully registered ${data.length} slash commands globally.`);
+        
+        // Count prefix-only commands
+        const prefixOnlyCommands = Array.from(commands.values()).filter(cmd => 'prefixRun' in cmd && !('execute' in cmd));
+        console.log(`✅ Loaded ${prefixOnlyCommands.length} prefix-only commands`);
         
         // Log details of critical commands for verification
         const gschedule = commands.get('gschedule');
