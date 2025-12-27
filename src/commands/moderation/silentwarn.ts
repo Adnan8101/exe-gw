@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { canModerate, createModCase, hasModPermission } from '../../utils/moderationUtils';
 
 
@@ -11,8 +12,15 @@ export default {
     .setDescription('Warn a member without notifying them')
     .addUserOption(option => option.setName("user").setDescription("The user to silently warn").setRequired(true)).addStringOption(option => option.setName("reason").setDescription("Reason for the warning").setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+  
+  metadata: {
+    syntax: '!silentwarn <user> [reason]',
+    example: '!silentwarn @User Minor offense',
+    permissions: 'Moderate Members',
+    category: 'Moderation'
+  },
 
- async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
     
     // Parse slash command options
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasModPermission(message.member)) {

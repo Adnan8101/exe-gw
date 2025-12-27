@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { canModerate, createModCase, createModEmbed, createDMEmbed, hasModPermission, parseDuration, formatDuration } from '../../utils/moderationUtils';
 
 
@@ -11,6 +12,13 @@ export default {
     .setDescription('Timeout a member')
     .addUserOption(option => option.setName("user").setDescription("The user to timeout").setRequired(true)).addStringOption(option => option.setName("duration").setDescription("Timeout duration (e.g., 1m, 1h, 1d)").setRequired(true)).addStringOption(option => option.setName("reason").setDescription("Reason for the timeout").setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+  
+  metadata: {
+    syntax: '!timeout <user> <duration> [reason]',
+    example: '!timeout @User 1h Spamming',
+    permissions: 'Moderate Members',
+    category: 'Moderation'
+  }
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 2) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user and duration')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasModPermission(message.member)) {

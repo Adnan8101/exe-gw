@@ -2,6 +2,7 @@ import { Message, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChatIn
 import { canModerate, createModCase, createModEmbed, createDMEmbed, hasKickPermission } from '../../utils/moderationUtils';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 export default {
  data: new SlashCommandBuilder()
@@ -10,8 +11,14 @@ export default {
     .addUserOption(option => option.setName('user').setDescription('The user to kick').setRequired(true))
     .addStringOption(option => option.setName('reason').setDescription('Reason for the kick').setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+  
+  metadata: {
+    syntax: '!kick <user> [reason]',
+    example: '!kick @User Spamming',
+    permissions: 'Kick Members',
+    category: 'Moderation'
+  },
 
- 
   async execute(interaction: ChatInputCommandInteraction) {
     // Convert interaction to message-like format for shared logic
     const args: string[] = [];
@@ -63,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasKickPermission(message.member)) {

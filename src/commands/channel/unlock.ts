@@ -10,6 +10,13 @@ export default {
     .setDescription('Unlock a channel')
     .addChannelOption(option => option.setName("channel").setDescription("The channel to unlock (defaults to current)").setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
+  metadata: {
+    syntax: '!unlock [channel]',
+    example: '!unlock #general',
+    permissions: 'Manage Channels',
+    category: 'Channel Management'
+  }
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];

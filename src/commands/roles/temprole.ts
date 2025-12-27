@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { hasManageRolesPermission, parseDuration, formatDuration } from '../../utils/moderationUtils';
 import { prisma } from '../../utils/database';
 
@@ -12,8 +13,15 @@ export default {
     .setDescription('Give a member a temporary role')
     .addUserOption(option => option.setName("user").setDescription("The user").setRequired(true)).addRoleOption(option => option.setName("role").setDescription("The role to assign temporarily").setRequired(true)).addStringOption(option => option.setName("duration").setDescription("Duration (e.g., 1h, 1d, 1w)").setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+  
+  metadata: {
+    syntax: '!temprole <user> <role> <duration>',
+    example: '!temprole @User @VIP 7d',
+    permissions: 'Manage Roles',
+    category: 'Role Management'
+  },
 
- async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
     
     // Parse slash command options
@@ -63,7 +71,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 3) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user, role, and duration')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasManageRolesPermission(message.member)) {

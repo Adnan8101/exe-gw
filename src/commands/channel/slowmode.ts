@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, ChannelType, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 function parseTime(time: string): number | null {
   const regex = /^(\d+)([smh])$/;
@@ -41,6 +42,13 @@ export default {
     .addIntegerOption(option => option.setName('seconds').setDescription('Slowmode duration in seconds (0 to disable)').setRequired(true).setMinValue(0).setMaxValue(21600))
     .addChannelOption(option => option.setName('channel').setDescription('The channel (defaults to current)').setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
+  metadata: {
+    syntax: '!slowmode <seconds> [channel]',
+    example: '!slowmode 5 #general',
+    permissions: 'Manage Channels',
+    category: 'Channel Management'
+  }
 
   
   async execute(interaction: ChatInputCommandInteraction) {
@@ -94,7 +102,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'seconds')] });
+    }
+
     if (!message.guild || !message.member) return;
 
     if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {

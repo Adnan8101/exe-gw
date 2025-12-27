@@ -5,10 +5,8 @@ const path = require('path');
 
 const rootDir = path.join(__dirname, '..');
 
-// All files that were converted
-const allConvertedFiles = [
+const files = [
   'src/commands/moderation/kick.ts',
-  'src/commands/moderation/ban.ts',
   'src/commands/moderation/unban.ts',
   'src/commands/moderation/softban.ts',
   'src/commands/moderation/tempban.ts',
@@ -24,6 +22,10 @@ const allConvertedFiles = [
   'src/commands/channel/lock.ts',
   'src/commands/channel/unlock.ts',
   'src/commands/channel/slowmode.ts',
+  'src/commands/roles/role.ts',
+  'src/commands/roles/temprole.ts',
+  'src/commands/roles/rolelock.ts',
+  'src/commands/purge/purge.ts',
   'src/commands/purge/cleanup.ts',
   'src/commands/purge/purgeafter.ts',
   'src/commands/purge/purgebefore.ts',
@@ -36,49 +38,27 @@ const allConvertedFiles = [
   'src/commands/purge/purgereactions.ts',
   'src/commands/purge/purgeregex.ts',
   'src/commands/purge/purgeuser.ts',
-  'src/commands/roles/role.ts',
-  'src/commands/roles/rolelock.ts',
-  'src/commands/roles/temprole.ts'
 ];
 
-console.log('🔧 Fixing imports in converted files...\n');
+console.log('🔧 Fixing syntax errors...\n');
 
 let fixed = 0;
 
-for (const filePath of allConvertedFiles) {
+for (const filePath of files) {
   const fullPath = path.join(rootDir, filePath);
   
   try {
     let content = fs.readFileSync(fullPath, 'utf8');
     const original = content;
     
-    // Fix the import statement - make sure SlashCommandBuilder and ChatInputCommandInteraction are included
-    const importMatch = content.match(/^import \{([^}]+)\} from 'discord\.js';/m);
-    
-    if (importMatch) {
-      let imports = importMatch[1].split(',').map(i => i.trim());
-      
-      // Add missing imports
-      if (!imports.includes('SlashCommandBuilder')) {
-        imports.push('SlashCommandBuilder');
-      }
-      if (!imports.includes('ChatInputCommandInteraction')) {
-        imports.push('ChatInputCommandInteraction');
-      }
-      
-      // Remove duplicates
-      imports = [...new Set(imports)];
-      
-      const newImport = `import { ${imports.join(', ')} } from 'discord.js';`;
-      
-      content = content.replace(/^import \{[^}]+\} from 'discord\.js';/m, newImport);
-    }
-    
-    // Fix the member.user.id issue in the execute method
-    content = content.replace(
-      /new Map\(\[\[interaction\.options\.getMember\('user'\)!\.user\.id, interaction\.options\.getMember\('user'\)\]\]\)/g,
-      `new Map(interaction.options.getMember('user') ? [[interaction.options.getUser('user')!.id, interaction.options.getMember('user')]] : [])`
+    // Fix double comma after setDefaultMemberPermissions
+    content = content.replace(/\.setDefaultMemberPermissions\([^)]+\),,/g, match => 
+      match.replace(',,', ',')
     );
+    
+    // Fix missing comma after metadata block if needed
+    content = content.replace(/\n  \}\n\n \n  async execute/g, '\n  },\n\n  async execute');
+    content = content.replace(/\n  \}\n\n  async execute/g, '\n  },\n\n  async execute');
     
     if (content !== original) {
       fs.writeFileSync(fullPath, content, 'utf8');
@@ -93,4 +73,4 @@ for (const filePath of allConvertedFiles) {
   }
 }
 
-console.log(`\n✨ Fixed ${fixed}/${allConvertedFiles.length} files`);
+console.log(`\n✨ Fixed ${fixed}/${files.length} files`);

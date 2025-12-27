@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, Role, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { canModerate, hasManageRolesPermission } from '../../utils/moderationUtils';
 
 
@@ -27,8 +28,14 @@ export default {
         .setDescription('List all roles of a user')
         .addUserOption(option => option.setName('user').setDescription('The user').setRequired(true)))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+  
+  metadata: {
+    syntax: '!role <add|remove|list> <role> <user>',
+    example: '!role add @Member @User',
+    permissions: 'Manage Roles',
+    category: 'Role Management'
+  },
 
- 
   async execute(interaction: ChatInputCommandInteraction) {
     // Convert interaction to message-like format for shared logic
     const args: string[] = [];
@@ -80,7 +87,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 2) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'action and role')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasManageRolesPermission(message.member)) {

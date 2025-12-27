@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { canModerate, createModCase, createModEmbed, createDMEmbed, hasBanPermission, parseDuration, formatDuration } from '../../utils/moderationUtils';
 
 
@@ -11,6 +12,13 @@ export default {
     .setDescription('Temporarily ban a member')
     .addUserOption(option => option.setName("user").setDescription("The user to temporarily ban").setRequired(true)).addStringOption(option => option.setName("duration").setDescription("Ban duration (e.g., 1h, 1d, 1w)").setRequired(true)).addStringOption(option => option.setName("reason").setDescription("Reason for the ban").setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+  
+  metadata: {
+    syntax: '!tempban <user> <duration> [reason]',
+    example: '!tempban @User 7d Repeated warnings',
+    permissions: 'Ban Members',
+    category: 'Moderation'
+  }
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 2) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user and duration')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasBanPermission(message.member)) {

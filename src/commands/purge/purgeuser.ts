@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 export default {
   data: new SlashCommandBuilder()
@@ -9,6 +10,13 @@ export default {
     .addUserOption(option => option.setName('user').setDescription('The user whose messages to delete').setRequired(true))
     .addIntegerOption(option => option.setName('amount').setDescription('Number of messages to delete (1-100)').setRequired(true).setMinValue(1).setMaxValue(100))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  
+  metadata: {
+    syntax: '!purgeuser <user> <amount>',
+    example: '!purgeuser @User 30',
+    permissions: 'Manage Messages',
+    category: 'Purge'
+  }
 
   
   async execute(interaction: ChatInputCommandInteraction) {
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 2) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user and amount')] });
+    }
+
     if (!message.guild || !message.member) return;
 
     if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {

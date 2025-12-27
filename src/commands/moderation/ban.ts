@@ -2,6 +2,7 @@ import { Message, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChatIn
 import { canModerate, createModCase, createModEmbed, createDMEmbed, hasBanPermission } from '../../utils/moderationUtils';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 export default {
  data: new SlashCommandBuilder()
@@ -10,8 +11,14 @@ export default {
     .addStringOption(option => option.setName('user').setDescription('The user ID or mention to ban').setRequired(true))
     .addStringOption(option => option.setName('reason').setDescription('Reason for the ban').setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+  
+  metadata: {
+    syntax: '!ban <user> [reason]',
+    example: '!ban @User Breaking rules',
+    permissions: 'Ban Members',
+    category: 'Moderation'
+  },
 
- 
   async execute(interaction: ChatInputCommandInteraction) {
     // Convert interaction to message-like format for shared logic
     const args: string[] = [];
@@ -63,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasBanPermission(message.member)) {

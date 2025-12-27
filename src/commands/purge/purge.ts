@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 async function executePurge(
   guild: any,
@@ -59,6 +60,13 @@ export default {
         .setMaxValue(100)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  
+  metadata: {
+    syntax: '!purge <amount>',
+    example: '!purge 50',
+    permissions: 'Manage Messages',
+    category: 'Purge'
+  },
 
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.guild || !interaction.member || !interaction.channel) return;

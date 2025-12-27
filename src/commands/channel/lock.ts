@@ -10,6 +10,13 @@ export default {
     .setDescription('Lock a channel')
     .addChannelOption(option => option.setName("channel").setDescription("The channel to lock (defaults to current)").setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
+  metadata: {
+    syntax: '!lock [channel]',
+    example: '!lock #general',
+    permissions: 'Manage Channels',
+    category: 'Channel Management'
+  }
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];

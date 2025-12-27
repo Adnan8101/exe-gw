@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { hasModPermission } from '../../utils/moderationUtils';
 
 
@@ -11,6 +12,13 @@ export default {
     .setDescription('Remove timeout from a member')
     .addUserOption(option => option.setName("user").setDescription("The user to remove timeout from").setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+  
+  metadata: {
+    syntax: '!untimeout <user>',
+    example: '!untimeout @User',
+    permissions: 'Moderate Members',
+    category: 'Moderation'
+  }
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasModPermission(message.member)) {

@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 export default {
   data: new SlashCommandBuilder()
@@ -8,6 +9,13 @@ export default {
     .setDescription('Delete messages after a specific message')
     .addStringOption(option => option.setName('messageid').setDescription('Message ID to purge after').setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  
+  metadata: {
+    syntax: '!purgeafter <message_id>',
+    example: '!purgeafter 123456789012345678',
+    permissions: 'Manage Messages',
+    category: 'Purge'
+  }
 
   
   async execute(interaction: ChatInputCommandInteraction) {
@@ -61,7 +69,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'message ID')] });
+    }
+
     if (!message.guild || !message.member) return;
 
     if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {

@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 export default {
   data: new SlashCommandBuilder()
@@ -8,6 +9,13 @@ export default {
     .setDescription('Delete messages containing links')
     .addIntegerOption(option => option.setName('amount').setDescription('Number of messages with links to delete (1-100)').setRequired(true).setMinValue(1).setMaxValue(100))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  
+  metadata: {
+    syntax: '!purgelinks <amount>',
+    example: '!purgelinks 40',
+    permissions: 'Manage Messages',
+    category: 'Purge'
+  }
 
   
   async execute(interaction: ChatInputCommandInteraction) {
@@ -61,7 +69,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'amount')] });
+    }
+
     if (!message.guild || !message.member) return;
 
     if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {

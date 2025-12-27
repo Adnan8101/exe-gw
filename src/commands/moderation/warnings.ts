@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { hasModPermission } from '../../utils/moderationUtils';
 import { prisma } from '../../utils/database';
 
@@ -12,8 +13,15 @@ export default {
     .setDescription('View warnings for a member')
     .addUserOption(option => option.setName("user").setDescription("The user to view warnings for").setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+  
+  metadata: {
+    syntax: '!warnings <user>',
+    example: '!warnings @User',
+    permissions: 'Moderate Members',
+    category: 'Moderation'
+  },
 
- async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
     
     // Parse slash command options
@@ -63,7 +71,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasModPermission(message.member)) {

@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChannelType, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 async function handleThreadCleanup(message: Message, args: string[]) {
   const threadId = args[1];
@@ -79,6 +80,13 @@ export default {
     .setDescription('Advanced cleanup commands')
     .addStringOption(option => option.setName('target').setDescription('Channel ID or "all" for all threads').setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  
+  metadata: {
+    syntax: '!cleanup <thread_id|all>',
+    example: '!cleanup all',
+    permissions: 'Manage Messages',
+    category: 'Purge'
+  }
 
   
   async execute(interaction: ChatInputCommandInteraction) {
@@ -132,7 +140,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'thread ID or "all"')] });
+    }
+
     if (!message.guild || !message.member) return;
 
     if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {

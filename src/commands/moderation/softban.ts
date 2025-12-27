@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { canModerate, createModCase, createModEmbed, createDMEmbed, hasBanPermission } from '../../utils/moderationUtils';
 
 
@@ -11,6 +12,13 @@ export default {
     .setDescription('Ban and immediately unban a member to delete their messages')
     .addUserOption(option => option.setName("user").setDescription("The user to softban").setRequired(true)).addStringOption(option => option.setName("reason").setDescription("Reason for the softban").setRequired(false))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+  
+  metadata: {
+    syntax: '!softban <user> [reason]',
+    example: '!softban @User Spam (deletes messages)',
+    permissions: 'Ban Members',
+    category: 'Moderation'
+  }
 
  async execute(interaction: ChatInputCommandInteraction) {
     const args: string[] = [];
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
 
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasBanPermission(message.member)) {

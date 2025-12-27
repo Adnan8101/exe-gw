@@ -1,6 +1,7 @@
 import { Message, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 import { hasManageRolesPermission } from '../../utils/moderationUtils';
 import { prisma } from '../../utils/database';
 
@@ -25,8 +26,14 @@ export default {
         .setName('list')
         .setDescription('List all locked roles'))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+  
+  metadata: {
+    syntax: '!rolelock <add|remove|list> [role]',
+    example: '!rolelock add @Admin',
+    permissions: 'Manage Roles',
+    category: 'Role Management'
+  },
 
- 
   async execute(interaction: ChatInputCommandInteraction) {
     // Convert interaction to message-like format for shared logic
     const args: string[] = [];
@@ -78,7 +85,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'action')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasManageRolesPermission(message.member)) {

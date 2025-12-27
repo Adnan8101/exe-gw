@@ -2,6 +2,7 @@ import { Message, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChatIn
 import { hasBanPermission } from '../../utils/moderationUtils';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
+import { createMissingArgsEmbed } from '../../utils/commandHelp';
 
 export default {
  data: new SlashCommandBuilder()
@@ -9,6 +10,13 @@ export default {
     .setDescription('Unban a user from the server')
     .addStringOption(option => option.setName('userid').setDescription('The user ID to unban').setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+  
+  metadata: {
+    syntax: '!unban <user_id>',
+    example: '!unban 123456789012345678',
+    permissions: 'Ban Members',
+    category: 'Moderation'
+  },
 
  
   async execute(interaction: ChatInputCommandInteraction) {
@@ -62,7 +70,13 @@ export default {
     return this._sharedLogic(message, args);
   },
   
+  
   async _sharedLogic(message: Message, args: string[]) {
+    // Validate required arguments
+    if (args.length < 1) {
+      return message.reply({ embeds: [createMissingArgsEmbed(this.data as any, 'user ID')] });
+    }
+
  if (!message.guild || !message.member) return;
 
  if (!hasBanPermission(message.member)) {
