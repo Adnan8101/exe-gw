@@ -48,7 +48,7 @@ export default {
     example: '!slowmode 5 #general',
     permissions: 'Manage Channels',
     category: 'Channel Management'
-  }
+  },
 
   
   async execute(interaction: ChatInputCommandInteraction) {
