@@ -99,9 +99,16 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
 
             try {
                 
-                const filter = (m: any) => m.author.id === user.id;
-                const collected = await dmChannel.awaitMessages({ filter, max: 1, time: 60000, errors: ['time'] });
+                const filter = (m: any) => m.author.id === user.id && m.channel.id === dmChannel.id;
+                const collected = await dmChannel.awaitMessages({ 
+                    filter, 
+                    max: 1, 
+                    time: 60000, 
+                    errors: ['time'] 
+                });
+                
                 const response = collected.first()?.content.toUpperCase().trim();
+                console.log(`[Captcha] User ${user.id} submitted: ${response}, Expected: ${text}`);
 
                 if (response !== text) {
                     const failEmbed = new EmbedBuilder()
@@ -133,6 +140,7 @@ export async function handleReactionAdd(reaction: MessageReaction, user: User, c
                 await dmChannel.send({ embeds: [successEmbed] });
 
             } catch (timeout) {
+                console.log(`[Captcha] Timeout for user ${user.id}`);
                 const timeoutEmbed = new EmbedBuilder()
                     .setTitle(`${Emojis.CROSS} Captcha Timed Out`)
                     .setDescription([
