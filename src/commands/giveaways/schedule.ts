@@ -36,6 +36,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('gschedule')
         .setDescription('Schedule a giveaway for a specific time')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         
         // Required options
         .addStringOption(option =>
