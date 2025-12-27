@@ -1,4 +1,4 @@
-import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, ChannelType } from 'discord.js';
+import { Message, EmbedBuilder, PermissionFlagsBits, TextChannel, ChannelType, SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
 
@@ -35,16 +35,66 @@ function formatTime(seconds: number): string {
 }
 
 export default {
-  data: {
-    name: 'slowmode',
-    description: 'Set or remove slowmode in a channel',
-    category: 'channel',
-    syntax: '!slowmode <time|off> [channel]',
-    example: '!slowmode 10s',
-    permissions: ['ManageChannels']
-  },
+  data: new SlashCommandBuilder()
+    .setName('slowmode')
+    .setDescription('Set or remove slowmode in a channel')
+    .addIntegerOption(option => option.setName('seconds').setDescription('Slowmode duration in seconds (0 to disable)').setRequired(true).setMinValue(0).setMaxValue(21600))
+    .addChannelOption(option => option.setName('channel').setDescription('The channel (defaults to current)').setRequired(false))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
+  
+  async execute(interaction: ChatInputCommandInteraction) {
+    // Convert interaction to message-like format for shared logic
+    const args: string[] = [];
+    
+    // Extract args from slash command options
+    if (interaction.options.data) {
+      for (const opt of interaction.options.data) {
+        if (opt.value !== undefined) {
+          args.push(String(opt.value));
+        } else if (opt.user) {
+          args.push(opt.user.id);
+        } else if (opt.channel) {
+          args.push(opt.channel.id);
+        } else if (opt.role) {
+          args.push(opt.role.id);
+        }
+      }
+    }
+    
+    // Create message-like object
+    const message: any = {
+      guild: interaction.guild,
+      member: interaction.member,
+      author: interaction.user,
+      channel: interaction.channel,
+      mentions: {
+        members: interaction.options.getMember('user') ? 
+          new Map(interaction.options.getMember('user') ? [[interaction.options.getUser('user')!.id, interaction.options.getMember('user')]] : []) : 
+          new Map(),
+        channels: interaction.options.getChannel('channel') ? 
+          new Map([[interaction.options.getChannel('channel')!.id, interaction.options.getChannel('channel')]]) : 
+          new Map(),
+        roles: interaction.options.getRole('role') ? 
+          new Map([[interaction.options.getRole('role')!.id, interaction.options.getRole('role')]]) : 
+          new Map()
+      },
+      reply: async (options: any) => {
+        if (interaction.replied || interaction.deferred) {
+          return interaction.followUp(options);
+        }
+        return interaction.reply(options);
+      }
+    };
+    
+    return this._sharedLogic(message as Message, args);
+  },
+  
   async prefixRun(message: Message, args: string[]) {
+    return this._sharedLogic(message, args);
+  },
+  
+  async _sharedLogic(message: Message, args: string[]) {
     if (!message.guild || !message.member) return;
 
     if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {

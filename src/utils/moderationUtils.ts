@@ -40,11 +40,11 @@ export async function createModCase(
 }
 
 export function canModerate(moderator: GuildMember, target: GuildMember): boolean {
-  if (target.guild.ownerId === target.id) {
+  if (target.guild?.ownerId === target.id) {
     return false;
   }
   
-  if (moderator.guild.ownerId === moderator.id) {
+  if (moderator.guild?.ownerId === moderator.id) {
     return true;
   }
   
