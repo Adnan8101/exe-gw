@@ -150,3 +150,56 @@ model IgnoredChannel {
 
   @@unique([guildId, channelId])
 }
+
+model ModerationCase {
+  id          Int      @id @default(autoincrement())
+  caseId      String   @unique
+  guildId     String
+  targetId    String
+  targetTag   String
+  moderatorId String
+  moderatorTag String
+  action      String   // kick, ban, warn, timeout, softban, tempban, etc.
+  reason      String?
+  duration    BigInt?  // For tempban, timeout, temprole (in milliseconds)
+  silent      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+
+  @@index([guildId])
+  @@index([targetId])
+  @@index([moderatorId])
+}
+
+model Warning {
+  id          Int      @id @default(autoincrement())
+  guildId     String
+  userId      String
+  moderatorId String
+  reason      String?
+  caseId      String
+  createdAt   DateTime @default(now())
+
+  @@index([guildId, userId])
+}
+
+model LockedRole {
+  id        Int      @id @default(autoincrement())
+  guildId   String
+  roleId    String
+  lockedBy  String
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, roleId])
+}
+
+model TemporaryRole {
+  id        Int      @id @default(autoincrement())
+  guildId   String
+  userId    String
+  roleId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
