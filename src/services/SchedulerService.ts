@@ -219,20 +219,25 @@ export class SchedulerService {
                                     if (guild) {
                                         const member = await guild.members.fetch(payload.birthdayUser).catch(() => null);
                                         if (member) {
-                                        // 1. Give Birthday Role with hierarchy check
-                                        if (config.birthdayRole) {
-                                            const role = await guild.roles.fetch(config.birthdayRole).catch(() => null);
-                                            if (role) {
-                                                const botMember = guild.members.me;
-                                                if (botMember && role.position < botMember.roles.highest.position) {
-                                                    await member.roles.add(config.birthdayRole).catch(e => console.error("[Scheduler] Failed to add bday role", e));
-                                                } else {
-                                                    console.warn(`[Scheduler] Cannot assign birthday role: Role ${role.name} is above or equal to bot's highest role`);
-                                                    if (channel) {
-                                                        await channel.send(`⚠️ Cannot assign birthday role **${role.name}** to ${member}: The role is above my highest role. Please move my role higher in the role list.`).catch(() => {});
+                                            // 1. Give Birthday Role with hierarchy check
+                                            if (config.birthdayRole) {
+                                                const role = await guild.roles.fetch(config.birthdayRole).catch(() => null);
+                                                if (role) {
+                                                    const botMember = guild.members.me;
+                                                    if (botMember && role.position < botMember.roles.highest.position) {
+                                                        await member.roles.add(config.birthdayRole).catch(e => console.error("[Scheduler] Failed to add bday role", e));
+                                                    } else {
+                                                        console.warn(`[Scheduler] Cannot assign birthday role: Role ${role.name} is above or equal to bot's highest role`);
+                                                        if (channel) {
+                                                            await channel.send(`⚠️ Cannot assign birthday role **${role.name}** to ${member}: The role is above my highest role. Please move my role higher in the role list.`).catch(() => {});
+                                                        }
                                                     }
                                                 }
                                             }
+
+                                            // 2. Generate Image
+                                            console.log(`[Scheduler] Generating birthday image for ${member.user.tag}`);
+                                            const { generateBirthdayImage } = await import('../utils/imageGenerator');
                                             const attachment = await generateBirthdayImage(member.user, guild);
 
                                             // 3. Prepare Message (Custom Text + Pings at end)
