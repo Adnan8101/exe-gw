@@ -241,7 +241,7 @@ export default {
             });
 
             if (selection.customId === 'add_announcement') {
-                await selection.update({ content: '', embeds: [], components: [] });
+                await selection.deferUpdate();
                 await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
             } else {
                 
@@ -303,7 +303,7 @@ export default {
             .setColor(Theme.EmbedColor)
             .setFooter({ text: 'Send your message now' });
 
-        await ctx.editReply({ embeds: [promptEmbed] });
+        await ctx.editReply({ embeds: [promptEmbed], components: [] });
 
         
         const filter = (m: Message) => m.author.id === ctx.user.id && m.channel.id === ctx.channel!.id;
@@ -380,10 +380,10 @@ export default {
                     announcementMedia: announcementMedia
                 };
 
-                await selection.deferUpdate();
-                await this.saveScheduledGiveaway(selection, channel, startTimeMs, winners, prize, timezone, payload);
+                await selection.update({ embeds: [], components: [] });
+                await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
             } else if (selection.customId === 'edit_announcement') {
-                await selection.update({ content: '', embeds: [], components: [] });
+                await selection.deferUpdate();
                 
                 await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
             } else {
