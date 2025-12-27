@@ -130,8 +130,8 @@ client.on('interactionCreate', async interaction => {
 
         // Check if channel is ignored (except for giveaway commands)
         if (interaction.channelId && interaction.guildId) {
-            const isGiveawayCommand = interaction.commandName.startsWith('g') && 
-                ['gstart', 'gcreate', 'gend', 'gcancel', 'gstop', 'gresume', 'greroll', 'gdelete', 'glist', 'ghistory', 'grefresh', 'gschedule'].includes(interaction.commandName);
+            const giveawayCommands = ['gstart', 'gcreate', 'gend', 'gcancel', 'gstop', 'gresume', 'greroll', 'gdelete', 'glist', 'ghistory', 'grefresh', 'gschedule'];
+            const isGiveawayCommand = giveawayCommands.includes(interaction.commandName);
             
             if (!isGiveawayCommand) {
                 try {
