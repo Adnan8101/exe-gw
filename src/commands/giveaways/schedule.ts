@@ -56,27 +56,27 @@ export default {
         .addChannelOption(option =>
             option.setName('channel').setDescription('Channel to start the giveaway in'))
         .addBooleanOption(option =>
-            option.setName('announce').setDescription('Add announcement message (True/False)'))
+            option.setName('announce').setDescription('Enable announcement message'))
         .addStringOption(option =>
-            option.setName('announcement').setDescription('Announcement text (if announce is true)'))
+            option.setName('announce_text').setDescription('Announcement message text'))
         .addStringOption(option =>
-            option.setName('announcement_media').setDescription('Media URL for announcement (if announce is true)'))
+            option.setName('announce_media').setDescription('Announcement media URL (image/gif)'))
         .addRoleOption(option =>
-            option.setName('role_requirement').setDescription('Role required to enter'))
+            option.setName('role_req').setDescription('Required role to enter'))
         .addIntegerOption(option =>
-            option.setName('invite_requirement').setDescription('Number of invites required'))
+            option.setName('invite_req').setDescription('Required invites to enter'))
         .addBooleanOption(option =>
-            option.setName('captcha').setDescription('Enable captcha verification (True/False)'))
+            option.setName('captcha').setDescription('Enable captcha verification'))
         .addRoleOption(option =>
             option.setName('winner_role').setDescription('Role to give to winners'))
         .addRoleOption(option =>
             option.setName('assign_role').setDescription('Role to assign to participants'))
         .addStringOption(option =>
-            option.setName('custom_message').setDescription('Custom message to display'))
+            option.setName('custom_msg').setDescription('Custom message to display'))
         .addStringOption(option =>
             option.setName('thumbnail').setDescription('Thumbnail URL'))
         .addStringOption(option =>
-            option.setName('custom_emoji').setDescription('Custom emoji')),
+            option.setName('emoji').setDescription('Custom emoji')),
 
     async autocomplete(interaction: AutocompleteInteraction) {
         const focusedValue = interaction.options.getFocused();
@@ -102,17 +102,17 @@ export default {
         const channel = interaction.options.getChannel('channel') as TextChannel || interaction.channel as TextChannel;
 
         
-        const roleReq = interaction.options.getRole('role_requirement');
-        const inviteReq = interaction.options.getInteger('invite_requirement') || 0;
+        const roleReq = interaction.options.getRole('role_req');
+        const inviteReq = interaction.options.getInteger('invite_req') || 0;
         const captchaReq = interaction.options.getBoolean('captcha') || false;
         const winnerRole = interaction.options.getRole('winner_role');
         const assignRole = interaction.options.getRole('assign_role');
-        const customMessage = interaction.options.getString('custom_message');
+        const customMessage = interaction.options.getString('custom_msg');
         const thumbnail = interaction.options.getString('thumbnail');
-        const emoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
+        const emoji = interaction.options.getString('emoji') || "<a:Exe_Gw:1454033571273506929>";
         const announce = interaction.options.getBoolean('announce') || false;
-        const announcement = interaction.options.getString('announcement');
-        const announcementMedia = interaction.options.getString('announcement_media');
+        const announcement = interaction.options.getString('announce_text');
+        const announcementMedia = interaction.options.getString('announce_media');
 
         await this.run(interaction, channel, timeStr, timezone, winners, prize, durationStr, {
             roleReq: roleReq?.id,
