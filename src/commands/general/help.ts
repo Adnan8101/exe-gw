@@ -66,7 +66,7 @@ const PAGES = [
         fields: [
             { 
                 name: 'Stats Management', 
-                value: '`/add_messages <@user> <amount>`\nAdd messages to a user\n\n`/reset_user_messages <@user>`\nReset a user\'s messages\n\n`/reset_all_messages`\nReset all messages in server\n\n*Same commands available for invites and vc*\n`/reset_user_invites` | `/reset_all_invites`\n`/reset_user_vc` | `/reset_all_vc`',
+                value: '`/add_messages <@user> <amount>`\nAdd messages to a user\n\n`/add_invites <@user> <amount>`\nAdd invites to a user\n\n`/add_vc <@user> <minutes>`\nAdd voice time to a user\n\n`/reset_user_messages` | `/reset_all_messages`\n`/reset_user_invites` | `/reset_all_invites`\n`/reset_user_vc` | `/reset_all_vc`',
                 inline: false
             },
             { 
