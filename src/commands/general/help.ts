@@ -29,7 +29,7 @@ const PAGES = [
                 inline: false
             }
         ],
-        footer: 'Page 1/4 • Requires Manage Server permission'
+        footer: 'Page 1/5 • Requires Manage Server permission'
     },
     {
         title: 'Statistics & Tracking',
@@ -57,7 +57,7 @@ const PAGES = [
                 inline: false
             }
         ],
-        footer: 'Page 2/4 • Automatic tracking for all members'
+        footer: 'Page 2/5 • Automatic tracking for all members'
     },
     {
         title: 'Admin & Configuration',
@@ -65,8 +65,13 @@ const PAGES = [
         color: '#FFD700',
         fields: [
             { 
+                name: 'Stats Management', 
+                value: '`/stats_manage add_messages <@user> <amount>`\nAdd messages to a user\n\n`/stats_manage reset_user_messages <@user>`\nReset a user\'s messages\n\n`/stats_manage reset_all_messages`\nReset all messages in server\n\n*Same options available for invites and vc*',
+                inline: false
+            },
+            { 
                 name: 'Channel Blacklist', 
-                value: '`/blacklist add <message|voice> <#channel>`\nStop tracking in specific channels\n\n`/blacklist remove <message|voice> <#channel>`\nResume tracking in channels\n\n`/blacklist show [type]`\nView all blacklisted channels\n\nSupports channel mention, ID, or name',
+                value: '`/blacklist add <message|voice> <#channel>`\nStop tracking in specific channels\n\n`/blacklist remove <message|voice> <#channel>`\nResume tracking in channels\n\n`/blacklist show [type]`\nView all blacklisted channels',
                 inline: false
             },
             { 
@@ -75,7 +80,20 @@ const PAGES = [
                 inline: false
             }
         ],
-        footer: 'Page 3/4 • Requires Manage Server or Owner permission'
+        footer: 'Page 3/5 • Requires Manage Server or Owner permission'
+    },
+    {
+        title: 'User Self-Reset Commands',
+        description: 'Manage your own statistics',
+        color: '#FFD700',
+        fields: [
+            { 
+                name: 'Reset Your Stats', 
+                value: '`/reset_my_messages`\nReset your message count to 0\n\n`/reset_my_invites`\nReset your invite count to 0\n\n`/reset_my_vc`\nReset your voice time to 0\n\nThese commands are permanent and cannot be undone!',
+                inline: false
+            }
+        ],
+        footer: 'Page 4/5 • Anyone can use these commands'
     },
     {
         title: 'Utility & Information',
@@ -103,7 +121,7 @@ const PAGES = [
                 inline: false
             }
         ],
-        footer: 'Page 4/4 • Created by Exe Team'
+        footer: 'Page 5/5 • Created by Exe Team'
     }
 ];
 
