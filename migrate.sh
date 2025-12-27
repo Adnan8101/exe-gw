@@ -3,15 +3,13 @@
 # Load environment variables
 source .env
 
-# Run migration SQL files in order
-echo "Running base migration..."
-PGPASSWORD=$DB_PASSWORD psql -h 136.112.235.116 -U postgres -d exe-giveaway-2 -f migration.sql
+# Run all migration SQL files in order
+echo "Running migrations..."
+PGPASSWORD=$DB_PASSWORD psql -h 136.112.235.116 -U postgres -d exe-giveaway-2 << EOF
+\i migration.sql
+\i migration-allowedguild.sql
+\i migration-badge.sql
+\i migration-ignoredchannel.sql
+EOF
 
-echo "Running allowed guild migration..."
-PGPASSWORD=$DB_PASSWORD psql -h 136.112.235.116 -U postgres -d exe-giveaway-2 -f migration-allowedguild.sql
-
-echo "Running badge migration..."
-PGPASSWORD=$DB_PASSWORD psql -h 136.112.235.116 -U postgres -d exe-giveaway-2 -f migration-badge.sql
-
-echo "All migrations complete! Restarting bot..."
-pm2 restart "Exe Giveaways"
+echo "All migrations complete!"
