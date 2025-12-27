@@ -59,9 +59,17 @@ export default {
                 await this.showPaginatedHistory(interaction, giveaways);
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching giveaway history:', error);
-            await interaction.editReply(`${Emojis.CROSS} Failed to fetch giveaway history.`);
+            let errorMessage = `${Emojis.CROSS} Failed to fetch giveaway history.`;
+            if (error.code === 'P2021') {
+                errorMessage = `${Emojis.CROSS} Database table not found. Please run migrations.`;
+            } else if (error.code === 'P2002') {
+                errorMessage = `${Emojis.CROSS} Database constraint error.`;
+            } else if (error.message) {
+                errorMessage = `${Emojis.CROSS} Failed to fetch giveaway history: ${error.message}`;
+            }
+            await interaction.editReply(errorMessage);
         }
     },
 

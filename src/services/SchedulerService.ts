@@ -5,6 +5,9 @@ import { getNowUTC, hasEnded, toBigInt } from '../utils/timeUtils';
 
 const prisma = new PrismaClient();
 
+// Track giveaways that have been pre-calculated
+const preCalculatedGiveaways: Set<string> = new Set();
+
 export class SchedulerService {
     private client: Client;
     private giveawayService: GiveawayService;
@@ -17,12 +20,13 @@ export class SchedulerService {
     }
 
     public start() {
-        // Check every 2 seconds for precise timing
+        // Check every 1 second for precise timing
         this.interval = setInterval(() => {
             this.checkScheduledGiveaways();
             this.checkActiveGiveaways();
-        }, 2000);
-        console.log("Scheduler service started with 2-second intervals for precise timing.");
+            this.preCalculateUpcomingGiveaways();
+        }, 1000);
+        console.log("Scheduler service started with 1-second intervals for precise timing.");
         
         // Initial checks and recovery
         this.recoverActiveGiveaways();
@@ -35,6 +39,48 @@ export class SchedulerService {
         // Clear all active timers
         this.activeGiveawayTimers.forEach(timer => clearTimeout(timer));
         this.activeGiveawayTimers.clear();
+    }
+
+    /**
+     * Pre-calculate winners for giveaways ending in the next 15 seconds
+     * Only for giveaways with high participant counts (10+)
+     */
+    private async preCalculateUpcomingGiveaways() {
+        try {
+            const nowUTC = toBigInt(getNowUTC());
+            const fifteenSecondsLater = nowUTC + BigInt(15000);
+
+            // Find giveaways ending in the next 15 seconds
+            const upcomingGiveaways = await prisma.giveaway.findMany({
+                where: {
+                    ended: false,
+                    endTime: {
+                        gt: nowUTC,
+                        lte: fifteenSecondsLater
+                    }
+                }
+            });
+
+            for (const giveaway of upcomingGiveaways) {
+                // Skip if already pre-calculated
+                if (preCalculatedGiveaways.has(giveaway.messageId)) {
+                    continue;
+                }
+
+                // Check participant count - only pre-calculate for 10+ participants
+                const participantCount = await prisma.participant.count({
+                    where: { giveawayId: giveaway.id }
+                });
+
+                if (participantCount >= 10) {
+                    console.log(`[Scheduler] Pre-calculating winners for giveaway ${giveaway.messageId} (${participantCount} participants)`);
+                    await this.giveawayService.preCalculateWinners(giveaway.messageId);
+                    preCalculatedGiveaways.add(giveaway.messageId);
+                }
+            }
+        } catch (error) {
+            console.error('[Scheduler] Error pre-calculating winners:', error);
+        }
     }
 
     /**
@@ -173,14 +219,20 @@ export class SchedulerService {
                                     if (guild) {
                                         const member = await guild.members.fetch(payload.birthdayUser).catch(() => null);
                                         if (member) {
-                                            // 1. Give Birthday Role
-                                            if (config.birthdayRole) {
-                                                await member.roles.add(config.birthdayRole).catch(e => console.error("[Scheduler] Failed to add bday role", e));
+                                        // 1. Give Birthday Role with hierarchy check
+                                        if (config.birthdayRole) {
+                                            const role = await guild.roles.fetch(config.birthdayRole).catch(() => null);
+                                            if (role) {
+                                                const botMember = guild.members.me;
+                                                if (botMember && role.position < botMember.roles.highest.position) {
+                                                    await member.roles.add(config.birthdayRole).catch(e => console.error("[Scheduler] Failed to add bday role", e));
+                                                } else {
+                                                    console.warn(`[Scheduler] Cannot assign birthday role: Role ${role.name} is above or equal to bot's highest role`);
+                                                    if (channel) {
+                                                        await channel.send(`⚠️ Cannot assign birthday role **${role.name}** to ${member}: The role is above my highest role. Please move my role higher in the role list.`).catch(() => {});
+                                                    }
+                                                }
                                             }
-
-                                            // 2. Generate Image
-                                            console.log(`[Scheduler] Generating birthday image for ${member.user.tag}`);
-                                            const { generateBirthdayImage } = await import('../utils/imageGenerator');
                                             const attachment = await generateBirthdayImage(member.user, guild);
 
                                             // 3. Prepare Message (Custom Text + Pings at end)

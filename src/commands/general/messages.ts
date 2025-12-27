@@ -32,10 +32,9 @@ export default {
         const totalCount = dbCount + pendingCount;
 
         const embed = new EmbedBuilder()
-            .setTitle('Message Count')
-            .setDescription(`**User:** ${targetUser.tag}\n**Messages:** ${totalCount}`)
+            .setTitle('💬 Message Statistics')
+            .setDescription(`**__${targetUser.username}__**\n\n📊 **Total Messages:** \`${totalCount}\``)
             .setColor(Theme.EmbedColor)
-            .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
         await interaction.reply({ embeds: [embed] });
@@ -59,10 +58,9 @@ export default {
         const totalCount = dbCount + pendingCount;
 
         const embed = new EmbedBuilder()
-            .setTitle('Message Count')
-            .setDescription(`**User:** ${targetUser.tag}\n**Messages:** ${totalCount}`)
+            .setTitle('💬 Message Statistics')
+            .setDescription(`**__${targetUser.username}__**\n\n📊 **Total Messages:** \`${totalCount}\``)
             .setColor(Theme.EmbedColor)
-            .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
         await message.channel.send({ embeds: [embed] });

@@ -45,9 +45,8 @@ export default {
 
         const embed = new EmbedBuilder()
             .setTitle('🎙️ Voice Statistics')
-            .setDescription(`**User:** ${targetUser.tag}\n**Total Voice Time:** ${timeStr}\n**Total Minutes:** ${voiceMinutes}`)
+            .setDescription(`**__${targetUser.username}__**\n\n📊 **Total Voice Time:** \`${timeStr}\`\n⏱️ **Total Minutes:** \`${voiceMinutes}\``)
             .setColor(Theme.EmbedColor)
-            .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
         await interaction.reply({ embeds: [embed] });
@@ -85,9 +84,8 @@ export default {
 
         const embed = new EmbedBuilder()
             .setTitle('🎙️ Voice Statistics')
-            .setDescription(`**User:** ${targetUser.tag}\n**Total Voice Time:** ${timeStr}\n**Total Minutes:** ${voiceMinutes}`)
+            .setDescription(`**__${targetUser.username}__**\n\n📊 **Total Voice Time:** \`${timeStr}\`\n⏱️ **Total Minutes:** \`${voiceMinutes}\``)
             .setColor(Theme.EmbedColor)
-            .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
         await message.channel.send({ embeds: [embed] });

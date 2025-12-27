@@ -80,7 +80,7 @@ export default {
                     
                     try {
                         const member = await guild.members.fetch(user.userId);
-                        description += `${medal} **${member.user.tag}** - \`${user.messageCount}\` messages\n`;
+                        description += `${medal} **__${member.user.username}__** - \`${user.messageCount}\` messages\n`;
                     } catch {
                         description += `${medal} <@${user.userId}> - \`${user.messageCount}\` messages\n`;
                     }
@@ -141,7 +141,7 @@ export default {
                     
                     try {
                         const member = await guild.members.fetch(invite.inviterId);
-                        description += `${medal} **${member.user.tag}** - \`${count}\` invites\n`;
+                        description += `${medal} **__${member.user.username}__** - \`${count}\` invites\n`;
                     } catch {
                         description += `${medal} <@${invite.inviterId}> - \`${count}\` invites\n`;
                     }
@@ -203,7 +203,7 @@ export default {
                     
                     try {
                         const member = await guild.members.fetch(user.userId);
-                        description += `${medal} **${member.user.tag}** - \`${timeStr}\`\n`;
+                        description += `${medal} **__${member.user.username}__** - \`${timeStr}\`\n`;
                     } catch {
                         description += `${medal} <@${user.userId}> - \`${timeStr}\`\n`;
                     }

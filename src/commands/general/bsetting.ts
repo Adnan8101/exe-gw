@@ -9,13 +9,44 @@ import {
     ComponentType,
     ButtonInteraction,
     Message,
-    TextChannel
+    TextChannel,
+    Guild
 } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
 
 const prisma = new PrismaClient();
+
+/**
+ * Check if a role can be assigned by the bot (role hierarchy check)
+ */
+async function canAssignRole(guild: Guild, roleId: string): Promise<{ canAssign: boolean; reason?: string }> {
+    try {
+        const role = await guild.roles.fetch(roleId);
+        if (!role) {
+            return { canAssign: false, reason: 'Role not found' };
+        }
+
+        const botMember = guild.members.me;
+        if (!botMember) {
+            return { canAssign: false, reason: 'Bot member not found' };
+        }
+
+        const botHighestRole = botMember.roles.highest;
+        if (role.position >= botHighestRole.position) {
+            return { canAssign: false, reason: `The role **${role.name}** is above or equal to my highest role. I cannot assign/remove it.` };
+        }
+
+        if (!botMember.permissions.has('ManageRoles')) {
+            return { canAssign: false, reason: 'I don\'t have the Manage Roles permission.' };
+        }
+
+        return { canAssign: true };
+    } catch (e) {
+        return { canAssign: false, reason: 'Failed to check role permissions' };
+    }
+}
 
 export default {
     data: new SlashCommandBuilder()
@@ -30,6 +61,18 @@ export default {
     async execute(interaction: ChatInputCommandInteraction) {
         const role = interaction.options.getRole('role', true);
         const pingRole = interaction.options.getRole('ping_role', true);
+        
+        // Check if bot can assign the birthday role
+        const roleCheck = await canAssignRole(interaction.guild!, role.id);
+        if (!roleCheck.canAssign) {
+            const errorEmbed = new EmbedBuilder()
+                .setTitle(`${Emojis.CROSS} Role Hierarchy Error`)
+                .setDescription(`**Cannot configure birthday role:**\n${roleCheck.reason}\n\nPlease move my role above the birthday role in Server Settings > Roles.`)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+        }
+        
         await this.run(interaction, role, pingRole);
     },
 
@@ -42,7 +85,22 @@ export default {
         const pingRole = message.mentions.roles.last(); // Simple assumption if 2 roles mentioned
 
         if (!role || !pingRole || message.mentions.roles.size < 2) {
-            return message.reply(`${Emojis.CROSS} Usage: \`!bsetting @BirthdayRole @PingRole\``);
+            const usageEmbed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} **Invalid Usage**\n\nUsage: \`!bsetting @BirthdayRole @PingRole\`\n\nExample: \`!bsetting @Birthday @everyone\``)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return message.reply({ embeds: [usageEmbed] });
+        }
+
+        // Check if bot can assign the birthday role
+        const roleCheck = await canAssignRole(message.guild!, role.id);
+        if (!roleCheck.canAssign) {
+            const errorEmbed = new EmbedBuilder()
+                .setTitle(`${Emojis.CROSS} Role Hierarchy Error`)
+                .setDescription(`**Cannot configure birthday role:**\n${roleCheck.reason}\n\nPlease move my role above the birthday role in Server Settings > Roles.`)
+                .setColor(Theme.ErrorColor)
+                .setTimestamp();
+            return message.reply({ embeds: [errorEmbed] });
         }
 
         await this.run(message, role, pingRole);

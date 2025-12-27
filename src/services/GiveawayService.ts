@@ -1,14 +1,47 @@
-import { Client, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { Client, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, Role, GuildMember } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { giveawayEndedEmbed, giveawayCancelledEmbed, createGiveawayEmbed } from '../utils/embeds';
 
 const prisma = new PrismaClient();
+
+// Cache for pre-calculated winners
+const preCalculatedWinners: Map<string, { winners: string[], calculatedAt: number }> = new Map();
 
 export class GiveawayService {
     private client: Client;
 
     constructor(client: Client) {
         this.client = client;
+    }
+
+    /**
+     * Check if a role can be assigned by the bot (role hierarchy check)
+     */
+    private async canAssignRole(guild: any, roleId: string): Promise<{ canAssign: boolean; reason?: string }> {
+        try {
+            const role = await guild.roles.fetch(roleId);
+            if (!role) {
+                return { canAssign: false, reason: 'Role not found' };
+            }
+
+            const botMember = guild.members.me;
+            if (!botMember) {
+                return { canAssign: false, reason: 'Bot member not found' };
+            }
+
+            const botHighestRole = botMember.roles.highest;
+            if (role.position >= botHighestRole.position) {
+                return { canAssign: false, reason: `The role **${role.name}** is above or equal to my highest role. I cannot assign it.` };
+            }
+
+            if (!botMember.permissions.has('ManageRoles')) {
+                return { canAssign: false, reason: 'I don\'t have the Manage Roles permission.' };
+            }
+
+            return { canAssign: true };
+        } catch (e) {
+            return { canAssign: false, reason: 'Failed to check role permissions' };
+        }
     }
 
     async startGiveaway(giveawayData: any): Promise<void> {
@@ -29,22 +62,62 @@ export class GiveawayService {
         });
     }
 
-    async endGiveaway(messageId: string): Promise<void> {
+    /**
+     * Pre-calculate winners before the giveaway ends
+     * This should be called 15 seconds before end time for high participant giveaways
+     */
+    async preCalculateWinners(messageId: string): Promise<void> {
         const giveaway = await prisma.giveaway.findUnique({ where: { messageId } });
         if (!giveaway || giveaway.ended) return;
-
-        // Mark ended
-        await prisma.giveaway.update({
-            where: { id: giveaway.id },
-            data: { ended: true }
-        });
 
         const participants = await prisma.participant.findMany({
             where: { giveawayId: giveaway.id },
             select: { userId: true }
         });
 
-        const winners = this.selectWinners(participants.map((p: { userId: string }) => p.userId), giveaway.winnersCount);
+        const winners = this.selectWinners(
+            participants.map((p: { userId: string }) => p.userId), 
+            giveaway.winnersCount
+        );
+
+        preCalculatedWinners.set(messageId, {
+            winners,
+            calculatedAt: Date.now()
+        });
+
+        console.log(`[GiveawayService] Pre-calculated ${winners.length} winners for giveaway ${messageId}`);
+    }
+
+    async endGiveaway(messageId: string): Promise<void> {
+        const giveaway = await prisma.giveaway.findUnique({ where: { messageId } });
+        if (!giveaway || giveaway.ended) return;
+
+        // Mark ended immediately
+        await prisma.giveaway.update({
+            where: { id: giveaway.id },
+            data: { ended: true }
+        });
+
+        // Check if we have pre-calculated winners
+        let winners: string[];
+        const preCalc = preCalculatedWinners.get(messageId);
+        
+        if (preCalc && (Date.now() - preCalc.calculatedAt) < 30000) {
+            // Use pre-calculated winners if they were calculated within the last 30 seconds
+            winners = preCalc.winners;
+            preCalculatedWinners.delete(messageId);
+            console.log(`[GiveawayService] Using pre-calculated winners for ${messageId}`);
+        } else {
+            // Calculate winners now
+            const participants = await prisma.participant.findMany({
+                where: { giveawayId: giveaway.id },
+                select: { userId: true }
+            });
+            winners = this.selectWinners(
+                participants.map((p: { userId: string }) => p.userId), 
+                giveaway.winnersCount
+            );
+        }
 
         // Save winners
         for (const winnerId of winners) {
@@ -75,14 +148,23 @@ export class GiveawayService {
                 if (winners.length > 0) {
                     const mentions = winners.map(id => `<@${id}>`).join(", ");
 
-                    // Assign Winner Role
+                    // Assign Winner Role with hierarchy check
                     if (giveaway.winnerRole) {
-                        for (const winnerId of winners) {
-                            try {
-                                const member = await guild.members.fetch(winnerId);
-                                await member.roles.add(giveaway.winnerRole);
-                            } catch (e) {
-                                console.error(`Failed to give winner role to ${winnerId}`, e);
+                        const roleCheck = await this.canAssignRole(guild, giveaway.winnerRole);
+                        if (!roleCheck.canAssign) {
+                            await channel.send(`⚠️ Could not assign winner role: ${roleCheck.reason}`);
+                        } else {
+                            for (const winnerId of winners) {
+                                try {
+                                    const member = await guild.members.fetch(winnerId);
+                                    await member.roles.add(giveaway.winnerRole);
+                                } catch (e: any) {
+                                    if (e.code === 50013) {
+                                        console.error(`Failed to give winner role to ${winnerId}: Role hierarchy issue`);
+                                    } else {
+                                        console.error(`Failed to give winner role to ${winnerId}`, e);
+                                    }
+                                }
                             }
                         }
                     }

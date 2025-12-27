@@ -29,10 +29,9 @@ export default {
         const inviteCount = stats?.inviteCount || 0;
 
         const embed = new EmbedBuilder()
-            .setTitle('Invite Count')
-            .setDescription(`**User:** ${targetUser.tag}\n**Total Invites:** ${inviteCount}`)
+            .setTitle('📨 Invite Statistics')
+            .setDescription(`**__${targetUser.username}__**\n\n📊 **Total Invites:** \`${inviteCount}\``)
             .setColor(Theme.EmbedColor)
-            .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
         await interaction.reply({ embeds: [embed] });
@@ -54,10 +53,9 @@ export default {
         const inviteCount = stats?.inviteCount || 0;
 
         const embed = new EmbedBuilder()
-            .setTitle('Invite Count')
-            .setDescription(`**User:** ${targetUser.tag}\n**Total Invites:** ${inviteCount}`)
+            .setTitle('📨 Invite Statistics')
+            .setDescription(`**__${targetUser.username}__**\n\n📊 **Total Invites:** \`${inviteCount}\``)
             .setColor(Theme.EmbedColor)
-            .setThumbnail(targetUser.displayAvatarURL())
             .setTimestamp();
 
         await message.reply({ embeds: [embed] });

@@ -131,3 +131,13 @@ model AllowedGuild {
   addedBy   String
   createdAt DateTime @default(now())
 }
+
+model UserBadge {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  badge     String   // "es" (early supporter), "bh" (bug hunter)
+  addedBy   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, badge])
+}

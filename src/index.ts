@@ -124,12 +124,28 @@ client.on('interactionCreate', async interaction => {
 
         try {
             await command.execute(interaction);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            // Provide specific error messages instead of generic ones
+            let errorMessage = '❌ An unexpected error occurred while executing this command.';
+            if (error.code === 50013) {
+                errorMessage = '❌ I don\'t have the required permissions to perform this action. Please check my role hierarchy and permissions.';
+            } else if (error.code === 50001) {
+                errorMessage = '❌ I don\'t have access to the required channel.';
+            } else if (error.code === 10008) {
+                errorMessage = '❌ The message was not found or has been deleted.';
+            } else if (error.code === 10007) {
+                errorMessage = '❌ The specified member was not found in this server.';
+            } else if (error.code === 50035) {
+                errorMessage = '❌ Invalid form body. Please check your input values.';
+            } else if (error.message) {
+                errorMessage = `❌ Error: ${error.message}`;
+            }
+            
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.followUp({ content: errorMessage, ephemeral: true });
             } else {
-                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.reply({ content: errorMessage, ephemeral: true });
             }
         }
     } else if (interaction.isAutocomplete()) {
@@ -240,20 +256,31 @@ client.on('messageCreate', async (message) => {
 
     if (!commandName) return;
 
-    // Map aliases to command names
+    // Map aliases to command names - only for prefix commands
+    // These aliases ONLY work when used with the prefix, not as standalone words
     const aliasMap: { [key: string]: string } = {
         'm': 'messages',
-        'i': 'invites'
+        'i': 'invites',
+        'es': 'invites'
     };
 
-    // Check direct command name or alias
-    const actualCommandName = aliasMap[commandName] || commandName;
+    // For no-prefix users typing without prefix, don't match single letter aliases
+    // They must use the full command name or the prefix + alias
+    let actualCommandName: string;
+    if (isNoPrefixUser && !message.content.startsWith(prefix)) {
+        // No-prefix mode: only match full command names, not aliases
+        actualCommandName = commandName;
+    } else {
+        // Prefix mode: aliases are allowed
+        actualCommandName = aliasMap[commandName] || commandName;
+    }
+
     const command = commands.get(actualCommandName);
 
     if (!command) return;
 
     // Define public commands (no permission check)
-    const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting'];
+    const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting', 'badge'];
     const isPublicCommand = publicCommands.includes(actualCommandName);
 
     // Only run if command supports prefixRun
@@ -265,9 +292,22 @@ client.on('messageCreate', async (message) => {
                 if (hasPerms === false) return; // Silent fail - no reply
             }
             await command.prefixRun(message, args);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            await message.reply('There was an error while executing this command!');
+            // Provide specific error messages instead of generic ones
+            let errorMessage = '❌ An unexpected error occurred.';
+            if (error.code === 50013) {
+                errorMessage = '❌ I don\'t have the required permissions to perform this action.';
+            } else if (error.code === 50001) {
+                errorMessage = '❌ I don\'t have access to the required channel.';
+            } else if (error.code === 10008) {
+                errorMessage = '❌ The message was not found or has been deleted.';
+            } else if (error.code === 10007) {
+                errorMessage = '❌ The specified member was not found.';
+            } else if (error.message) {
+                errorMessage = `❌ Error: ${error.message}`;
+            }
+            await message.reply(errorMessage);
         }
     }
 });
