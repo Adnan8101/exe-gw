@@ -173,7 +173,20 @@ function createMainHelpEmbed(categorizedCommands: Map<string, any[]>): EmbedBuil
 // Create dropdown menu for categories
 function createCategorySelectMenu(categorizedCommands: Map<string, any[]>): ActionRowBuilder<StringSelectMenuBuilder> {
   const categoryOrder = ['Moderation', 'Giveaways', 'Purge', 'Role Management', 'Channel Management', 'General'];
-  const options = [];
+  const options: StringSelectMenuOptionBuilder[] = [];
+  
+  // Add "All Categories" option first
+  let totalCommands = 0;
+  for (const [, commands] of categorizedCommands) {
+    totalCommands += commands.length;
+  }
+  
+  options.push(
+    new StringSelectMenuOptionBuilder()
+      .setLabel('All Categories')
+      .setDescription(`View all ${totalCommands} commands`)
+      .setValue('all_categories')
+  );
   
   // Sort categories
   const sortedCategories = Array.from(categorizedCommands.entries()).sort((a, b) => {
@@ -191,6 +204,16 @@ function createCategorySelectMenu(categorizedCommands: Map<string, any[]>): Acti
         .setLabel(category)
         .setDescription(`View ${commands.length} commands`)
         .setValue(category.toLowerCase().replace(/\s+/g, '_'))
+    );
+  }
+
+  // Ensure we have at least one option
+  if (options.length === 0) {
+    options.push(
+      new StringSelectMenuOptionBuilder()
+        .setLabel('No categories')
+        .setDescription('No commands available')
+        .setValue('none')
     );
   }
 
@@ -306,6 +329,16 @@ export default {
 
       if (componentInteraction.isStringSelectMenu()) {
         const selectedCategory = componentInteraction.values[0];
+        
+        // Handle "All Categories" option
+        if (selectedCategory === 'all_categories') {
+          await componentInteraction.update({
+            embeds: [createMainHelpEmbed(categorized)],
+            components: [createCategorySelectMenu(categorized)]
+          });
+          return;
+        }
+        
         // Find the actual category name
         let actualCategory = '';
         for (const [cat] of categorized) {
