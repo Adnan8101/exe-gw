@@ -20,7 +20,7 @@ export default {
         const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : `${Math.round(deferLatency)}ms`;
         
         const embed = new EmbedBuilder()
-            .setTitle('🏓 Pong!')
+            .setTitle(' Pong!')
             .setColor(Theme.EmbedColor)
             .addFields(
                 { name: 'WebSocket Ping', value: wsPingDisplay, inline: true },
@@ -33,7 +33,7 @@ export default {
 
     async prefixRun(message: any) {
         const start = Date.now();
-        const reply = await message.reply('🏓 Pinging...');
+        const reply = await message.reply(' Pinging...');
         const messageLatency = Date.now() - start;
         
         const editStart = Date.now();
@@ -44,7 +44,7 @@ export default {
         const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : `${Math.round(messageLatency)}ms`;
         
         const embed = new EmbedBuilder()
-            .setTitle('🏓 Pong!')
+            .setTitle(' Pong!')
             .setColor(Theme.EmbedColor)
             .addFields(
                 { name: 'WebSocket Ping', value: wsPingDisplay, inline: true },
