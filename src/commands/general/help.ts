@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Message, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Message, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
 import * as fs from 'fs';
@@ -74,15 +74,15 @@ function groupCommandsByCategory(commands: Map<string, any>): Map<string, any[]>
 function createCommandEmbed(commandData: CommandData): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(Theme.PrimaryColor)
-    .setTitle(`${Emojis.INFO} Command: ${commandData.name}`)
+    .setTitle(`Command: ${commandData.name}`)
     .setDescription(commandData.description);
 
   if (commandData.metadata) {
     embed.addFields(
-      { name: '📝 Syntax', value: `\`${commandData.metadata.syntax}\``, inline: false },
-      { name: '📚 Example', value: `\`${commandData.metadata.example}\``, inline: false },
-      { name: '🔐 Permission', value: commandData.metadata.permissions, inline: true },
-      { name: '📁 Category', value: commandData.metadata.category, inline: true }
+      { name: 'Syntax', value: `\`${commandData.metadata.syntax}\``, inline: false },
+      { name: 'Example', value: `\`${commandData.metadata.example}\``, inline: false },
+      { name: 'Permission', value: commandData.metadata.permissions, inline: true },
+      { name: 'Category', value: commandData.metadata.category, inline: true }
     );
   }
 
@@ -92,55 +92,75 @@ function createCommandEmbed(commandData: CommandData): EmbedBuilder {
   return embed;
 }
 
-// Create category overview embed
-function createCategoryEmbed(category: string, commands: any[]): EmbedBuilder {
+// Create category overview embed with pagination
+function createCategoryEmbed(category: string, commands: any[], page: number = 0): { embed: EmbedBuilder, totalPages: number } {
+  const commandsPerPage = 10;
+  const totalPages = Math.ceil(commands.length / commandsPerPage);
+  const startIdx = page * commandsPerPage;
+  const endIdx = startIdx + commandsPerPage;
+  const pageCommands = commands.slice(startIdx, endIdx);
+
   const embed = new EmbedBuilder()
     .setColor(Theme.PrimaryColor)
-    .setTitle(`${Emojis.INFO} ${category} Commands`)
-    .setDescription(`Total commands: **${commands.length}**\n\nUse \`!help <command>\` for detailed information about a specific command.`);
+    .setTitle(`${category} Commands`)
+    .setDescription(`Showing ${startIdx + 1}-${Math.min(endIdx, commands.length)} of ${commands.length} commands\n\nUse \`!help <command>\` for detailed information.`);
 
-  // Group into fields (max 25 fields, max 10 commands per field)
-  const chunked = [];
-  for (let i = 0; i < commands.length; i += 10) {
-    chunked.push(commands.slice(i, i + 10));
-  }
-
-  chunked.forEach((chunk, index) => {
-    const cmdList = chunk.map(cmd => `\`${cmd.name}\` - ${cmd.description}`).join('\n');
-    embed.addFields({
-      name: chunked.length > 1 ? `Commands (${index + 1}/${chunked.length})` : 'Commands',
-      value: cmdList,
-      inline: false
-    });
+  const cmdList = pageCommands.map(cmd => `**${cmd.name}**\n${cmd.description}`).join('\n\n');
+  
+  embed.addFields({
+    name: `Commands (Page ${page + 1}/${totalPages})`,
+    value: cmdList || 'No commands found',
+    inline: false
   });
 
-  embed.setFooter({ text: `Category: ${category} | Use !help <command> for details` });
+  embed.setFooter({ text: `Category: ${category} | Page ${page + 1}/${totalPages}` });
   embed.setTimestamp();
 
-  return embed;
+  return { embed, totalPages };
 }
 
 // Create main help embed with category overview
 function createMainHelpEmbed(categorizedCommands: Map<string, any[]>): EmbedBuilder {
+  const categoryOrder = ['Moderation', 'Giveaways', 'Purge', 'Role Management', 'Channel Management', 'General'];
   const embed = new EmbedBuilder()
     .setColor(Theme.PrimaryColor)
-    .setTitle(`${Emojis.INFO} Bot Command Help`)
-    .setDescription(`Welcome to the help menu! Select a category from the dropdown below to view commands.\n\n**Available Categories:**`);
+    .setTitle('Bot Command Help')
+    .setDescription('Welcome to the help menu! Select a category from the dropdown below to view commands.');
 
   let totalCommands = 0;
+  const categoryFields: Array<{ category: string, count: number }> = [];
   
+  // Collect all categories
   for (const [category, commands] of categorizedCommands) {
     totalCommands += commands.length;
-    embed.addFields({
-      name: `${category}`,
-      value: `${commands.length} commands`,
-      inline: true
-    });
+    categoryFields.push({ category, count: commands.length });
+  }
+
+  // Sort by custom order
+  categoryFields.sort((a, b) => {
+    const aIndex = categoryOrder.indexOf(a.category);
+    const bIndex = categoryOrder.indexOf(b.category);
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+    return a.category.localeCompare(b.category);
+  });
+
+  // Add category list
+  let categoryList = '';
+  for (const { category, count } of categoryFields) {
+    categoryList += `**${category}**\n${count} commands\n\n`;
   }
 
   embed.addFields({
-    name: '\u200B',
-    value: `**Total Commands:** ${totalCommands}\n\n📖 **How to use:**\n• Select a category from the dropdown menu below\n• Use \`!help <command>\` for specific command info\n• Commands support both \`!\` and \`/\` prefixes`,
+    name: 'Available Categories',
+    value: categoryList,
+    inline: false
+  });
+
+  embed.addFields({
+    name: 'How to use',
+    value: `• Select a category from the dropdown menu below\n• Use \`!help <command>\` for specific command info\n• Commands support both \`!\` and \`/\` prefixes\n\n**Total Commands:** ${totalCommands}`,
     inline: false
   });
 
@@ -152,13 +172,24 @@ function createMainHelpEmbed(categorizedCommands: Map<string, any[]>): EmbedBuil
 
 // Create dropdown menu for categories
 function createCategorySelectMenu(categorizedCommands: Map<string, any[]>): ActionRowBuilder<StringSelectMenuBuilder> {
+  const categoryOrder = ['Moderation', 'Giveaways', 'Purge', 'Role Management', 'Channel Management', 'General'];
   const options = [];
   
-  for (const [category, commands] of categorizedCommands) {
+  // Sort categories
+  const sortedCategories = Array.from(categorizedCommands.entries()).sort((a, b) => {
+    const aIndex = categoryOrder.indexOf(a[0]);
+    const bIndex = categoryOrder.indexOf(b[0]);
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+    return a[0].localeCompare(b[0]);
+  });
+
+  for (const [category, commands] of sortedCategories) {
     options.push(
       new StringSelectMenuOptionBuilder()
         .setLabel(category)
-        .setDescription(`View ${commands.length} commands in ${category}`)
+        .setDescription(`View ${commands.length} commands`)
         .setValue(category.toLowerCase().replace(/\s+/g, '_'))
     );
   }
@@ -169,6 +200,40 @@ function createCategorySelectMenu(categorizedCommands: Map<string, any[]>): Acti
     .addOptions(options);
 
   return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+}
+
+// Create pagination buttons
+function createPaginationButtons(currentPage: number, totalPages: number): ActionRowBuilder<ButtonBuilder> {
+  const row = new ActionRowBuilder<ButtonBuilder>();
+
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_first')
+      .setLabel('First')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage === 0),
+    new ButtonBuilder()
+      .setCustomId('help_prev')
+      .setLabel('Previous')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(currentPage === 0),
+    new ButtonBuilder()
+      .setCustomId('help_next')
+      .setLabel('Next')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(currentPage >= totalPages - 1),
+    new ButtonBuilder()
+      .setCustomId('help_last')
+      .setLabel('Last')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage >= totalPages - 1),
+    new ButtonBuilder()
+      .setCustomId('help_back')
+      .setLabel('Back to Menu')
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  return row;
 }
 
 export default {
@@ -220,41 +285,93 @@ export default {
       ephemeral: true
     });
 
-    // Create collector for dropdown interactions
+    // Store current state
+    const state = {
+      currentCategory: '',
+      currentPage: 0
+    };
+
+    // Create collector for all component interactions
     const collector = response.createMessageComponentCollector({
-      componentType: ComponentType.StringSelect,
       time: 300000 // 5 minutes
     });
 
-    collector.on('collect', async (selectInteraction) => {
-      if (selectInteraction.user.id !== interaction.user.id) {
-        return selectInteraction.reply({
+    collector.on('collect', async (componentInteraction) => {
+      if (componentInteraction.user.id !== interaction.user.id) {
+        return componentInteraction.reply({
           content: 'This menu is not for you!',
           ephemeral: true
         });
       }
 
-      const selectedCategory = selectInteraction.values[0];
-      // Find the actual category name
-      let actualCategory = '';
-      for (const [cat] of categorized) {
-        if (cat.toLowerCase().replace(/\s+/g, '_') === selectedCategory) {
-          actualCategory = cat;
-          break;
+      if (componentInteraction.isStringSelectMenu()) {
+        const selectedCategory = componentInteraction.values[0];
+        // Find the actual category name
+        let actualCategory = '';
+        for (const [cat] of categorized) {
+          if (cat.toLowerCase().replace(/\s+/g, '_') === selectedCategory) {
+            actualCategory = cat;
+            break;
+          }
         }
-      }
 
-      if (actualCategory && categorized.has(actualCategory)) {
-        const categoryCommands = categorized.get(actualCategory)!;
-        await selectInteraction.update({
-          embeds: [createCategoryEmbed(actualCategory, categoryCommands)],
-          components: [createCategorySelectMenu(categorized)]
-        });
+        if (actualCategory && categorized.has(actualCategory)) {
+          state.currentCategory = actualCategory;
+          state.currentPage = 0;
+          
+          const categoryCommands = categorized.get(actualCategory)!;
+          const { embed, totalPages } = createCategoryEmbed(actualCategory, categoryCommands, 0);
+          
+          const components: any[] = [createCategorySelectMenu(categorized)];
+          if (totalPages > 1) {
+            components.push(createPaginationButtons(0, totalPages));
+          }
+          
+          await componentInteraction.update({
+            embeds: [embed],
+            components
+          });
+        }
+      } else if (componentInteraction.isButton()) {
+        if (componentInteraction.customId === 'help_back') {
+          await componentInteraction.update({
+            embeds: [createMainHelpEmbed(categorized)],
+            components: [createCategorySelectMenu(categorized)]
+          });
+        } else if (state.currentCategory && categorized.has(state.currentCategory)) {
+          const categoryCommands = categorized.get(state.currentCategory)!;
+          const totalPages = Math.ceil(categoryCommands.length / 10);
+          
+          switch (componentInteraction.customId) {
+            case 'help_first':
+              state.currentPage = 0;
+              break;
+            case 'help_prev':
+              state.currentPage = Math.max(0, state.currentPage - 1);
+              break;
+            case 'help_next':
+              state.currentPage = Math.min(totalPages - 1, state.currentPage + 1);
+              break;
+            case 'help_last':
+              state.currentPage = totalPages - 1;
+              break;
+          }
+          
+          const { embed } = createCategoryEmbed(state.currentCategory, categoryCommands, state.currentPage);
+          
+          await componentInteraction.update({
+            embeds: [embed],
+            components: [
+              createCategorySelectMenu(categorized),
+              createPaginationButtons(state.currentPage, totalPages)
+            ]
+          });
+        }
       }
     });
 
     collector.on('end', () => {
-      // Disable the select menu after timeout
+      // Disable the components after timeout
       interaction.editReply({
         components: []
       }).catch(() => {});
