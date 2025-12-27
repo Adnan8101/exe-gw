@@ -8,19 +8,22 @@ export default {
 
     async execute(interaction: ChatInputCommandInteraction) {
         
+        const start = Date.now();
         await interaction.deferReply();
+        const deferLatency = Date.now() - start;
+        
+        const editStart = Date.now();
+        await interaction.editReply('Pinging...');
+        const apiLatency = Date.now() - editStart;
         
         const wsPing = interaction.client.ws.ping;
-        
-        const sent = Date.now();
-        await interaction.editReply('Calculating...');
-        const apiLatency = Date.now() - sent;
+        const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : `${Math.round(deferLatency)}ms`;
         
         const embed = new EmbedBuilder()
-            .setTitle('Ping')
+            .setTitle('🏓 Pong!')
             .setColor(Theme.EmbedColor)
             .addFields(
-                { name: 'WebSocket Ping', value: wsPing >= 0 ? `${wsPing}ms` : 'N/A', inline: true },
+                { name: 'WebSocket Ping', value: wsPingDisplay, inline: true },
                 { name: 'API Latency', value: `${apiLatency}ms`, inline: true }
             )
             .setTimestamp();
@@ -29,19 +32,22 @@ export default {
     },
 
     async prefixRun(message: any) {
-        const reply = await message.reply('Calculating ping...');
+        const start = Date.now();
+        const reply = await message.reply('🏓 Pinging...');
+        const messageLatency = Date.now() - start;
+        
+        const editStart = Date.now();
+        await reply.edit('Calculating...');
+        const apiLatency = Date.now() - editStart;
         
         const wsPing = message.client.ws.ping;
-        
-        const sent = Date.now();
-        await reply.edit('Calculating...');
-        const apiLatency = Date.now() - sent;
+        const wsPingDisplay = wsPing > 0 ? `${wsPing}ms` : `${Math.round(messageLatency)}ms`;
         
         const embed = new EmbedBuilder()
-            .setTitle('Ping')
+            .setTitle('🏓 Pong!')
             .setColor(Theme.EmbedColor)
             .addFields(
-                { name: 'WebSocket Ping', value: wsPing >= 0 ? `${wsPing}ms` : 'N/A', inline: true },
+                { name: 'WebSocket Ping', value: wsPingDisplay, inline: true },
                 { name: 'API Latency', value: `${apiLatency}ms`, inline: true }
             )
             .setTimestamp();
