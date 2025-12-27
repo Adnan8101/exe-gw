@@ -236,7 +236,7 @@ export default {
         try {
             const selection = await promptMsg.awaitMessageComponent({ 
                 filter: (btn) => btn.user.id === ctx.user.id, 
-                time: 60000,
+                time: 180000,
                 componentType: ComponentType.Button
             });
 
@@ -296,28 +296,79 @@ export default {
                 '• Images (attach or paste URL)',
                 '• GIFs',
                 '',
-                '⏰ You have **5 minutes** to send your message.',
+                '⏰ You have **3 minutes** to send your message.',
                 '',
                 '💡 *This announcement will be posted in the giveaway channel when the giveaway starts.*'
             ].join('\n'))
             .setColor(Theme.EmbedColor)
-            .setFooter({ text: 'Send your message now' });
+            .setFooter({ text: 'Send your message now or click Skip below' });
 
-        await ctx.editReply({ embeds: [promptEmbed], components: [] });
+        const skipRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('skip_message_input')
+                    .setLabel('Skip Announcement')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('⏭️')
+            );
+
+        await ctx.editReply({ embeds: [promptEmbed], components: [skipRow] });
 
         
         const filter = (m: Message) => m.author.id === ctx.user.id && m.channel.id === ctx.channel!.id;
         const messageChannel = ctx.channel as TextChannel;
-        const collected = await messageChannel.awaitMessages({ filter, max: 1, time: 300000, errors: ['time'] }).catch(() => null);
-
-        if (!collected || collected.size === 0) {
+        
+        const buttonPromise = ctx.fetchReply().then((msg: any) => 
+            msg.awaitMessageComponent({ 
+                filter: (btn: ButtonInteraction) => btn.user.id === ctx.user.id && btn.customId === 'skip_message_input',
+                time: 180000,
+                componentType: ComponentType.Button
+            }).catch(() => null)
+        );
+        
+        const messagePromise = messageChannel.awaitMessages({ filter, max: 1, time: 180000, errors: ['time'] }).catch(() => null);
+        
+        const result = await Promise.race([buttonPromise, messagePromise]);
+        
+        if (!result) {
             const timeoutEmbed = new EmbedBuilder()
                 .setDescription(`${Emojis.CROSS} Timed out. Giveaway not scheduled.`)
                 .setColor(Theme.ErrorColor);
-            return await ctx.editReply({ embeds: [timeoutEmbed] });
+            return await ctx.editReply({ embeds: [timeoutEmbed], components: [] });
         }
+        
+        if (result instanceof Map) {
+            const collected = result;
+            if (collected.size === 0) {
+                const timeoutEmbed = new EmbedBuilder()
+                    .setDescription(`${Emojis.CROSS} Timed out. Giveaway not scheduled.`)
+                    .setColor(Theme.ErrorColor);
+                return await ctx.editReply({ embeds: [timeoutEmbed], components: [] });
+            }
+        } else {
+            const skipButton = result as ButtonInteraction;
+            const payload = {
+                duration: durationMs,
+                roleRequirement: opts.roleReq || null,
+                inviteRequirement: opts.inviteReq || 0,
+                captchaRequirement: opts.captchaReq || false,
+                winnerRole: opts.winnerRole || null,
+                assignRole: opts.assignRole || null,
+                customMessage: opts.customMessage || null,
+                thumbnail: opts.thumbnail || null,
+                emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
+                birthdayUser: opts.birthdayUser || null,
+                announcement: null,
+                announcementMedia: null
+            };
+            
+            await skipButton.deferUpdate();
+            return await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
+        }
+        
+        const collected = result as Map<string, Message>;
 
-        const userMessage = collected.first()!;
+        const userMessage = Array.from(collected.values())[0];
         const announcementText = userMessage.content || '';
         const announcementMedia = userMessage.attachments.first()?.url || null;
 
@@ -360,7 +411,7 @@ export default {
         try {
             const selection = await previewMsg.awaitMessageComponent({ 
                 filter: (btn) => btn.user.id === ctx.user.id, 
-                time: 60000,
+                time: 180000,
                 componentType: ComponentType.Button
             });
 
