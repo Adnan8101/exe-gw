@@ -2,6 +2,33 @@ import { prisma } from './database';
 
 import { Client, GuildMember } from 'discord.js';
 
+type GiveawayStatus = 'PENDING' | 'ACTIVE' | 'ENDED' | 'CANCELLED' | 'PAUSED' | 'SCHEDULED';
+
+interface Giveaway {
+    id: number;
+    messageId: string | null;
+    guildId: string;
+    channelId: string;
+    hostId: string;
+    prize: string;
+    winnersCount: number;
+    status: GiveawayStatus;
+    endTime: bigint;
+    createdAt: Date;
+    roleRequirement: string | null;
+    inviteRequirement: number;
+    captchaRequirement: boolean;
+    winnerRole: string | null;
+    assignRole: string | null;
+    customMessage: string | null;
+    thumbnail: string | null;
+    emoji: string | null;
+    birthdayUser: string | null;
+    messageRequired: number;
+    voiceRequirement: number;
+    accountAgeRequirement: number;
+    serverAgeRequirement: number;
+}
 
 export interface RequirementResult {
     passed: boolean;
