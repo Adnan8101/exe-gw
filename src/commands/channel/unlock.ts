@@ -105,9 +105,9 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(' Channel Unlocked')
- .setDescription(`${channel} has been unlocked`)
- .setFooter({ text: `Unlocked by ${message.author.tag}` })
+ .setTitle(`${Emojis.TICK} Channel Unlocked`)
+ .setDescription(`${channel} is now unlocked`)
+ .setFooter({ text: `By ${message.author.tag}` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });

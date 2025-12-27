@@ -105,9 +105,9 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.ErrorColor)
- .setTitle(' Channel Locked')
- .setDescription(`${channel} has been locked`)
- .setFooter({ text: `Locked by ${message.author.tag}` })
+ .setTitle(`${Emojis.TICK} Channel Locked`)
+ .setDescription(`${channel} is now locked`)
+ .setFooter({ text: `By ${message.author.tag}` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });

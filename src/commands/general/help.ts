@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Message } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Message, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType } from 'discord.js';
 import { Theme } from '../../utils/theme';
 import { Emojis } from '../../utils/emojis';
 import * as fs from 'fs';
@@ -120,30 +120,27 @@ function createCategoryEmbed(category: string, commands: any[]): EmbedBuilder {
   return embed;
 }
 
-// Create main help embed
+// Create main help embed with category overview
 function createMainHelpEmbed(categorizedCommands: Map<string, any[]>): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(Theme.PrimaryColor)
     .setTitle(`${Emojis.INFO} Bot Command Help`)
-    .setDescription(`Welcome to the help menu! Here are all available command categories.\n\nUse \`!help <command>\` to see details about a specific command.`);
+    .setDescription(`Welcome to the help menu! Select a category from the dropdown below to view commands.\n\n**Available Categories:**`);
 
   let totalCommands = 0;
   
   for (const [category, commands] of categorizedCommands) {
     totalCommands += commands.length;
-    const commandNames = commands.slice(0, 8).map(c => `\`${c.name}\``).join(', ');
-    const more = commands.length > 8 ? `\n+${commands.length - 8} more...` : '';
-    
     embed.addFields({
-      name: `${category} (${commands.length} commands)`,
-      value: commandNames + more,
-      inline: false
+      name: `${category}`,
+      value: `${commands.length} commands`,
+      inline: true
     });
   }
 
   embed.addFields({
     name: '\u200B',
-    value: `**Total Commands:** ${totalCommands}\n\n📖 **Quick Start:**\n• \`!help <command>\` - View specific command info\n• Commands support both \`!\` and \`/\` prefixes`,
+    value: `**Total Commands:** ${totalCommands}\n\n📖 **How to use:**\n• Select a category from the dropdown menu below\n• Use \`!help <command>\` for specific command info\n• Commands support both \`!\` and \`/\` prefixes`,
     inline: false
   });
 
@@ -151,6 +148,27 @@ function createMainHelpEmbed(categorizedCommands: Map<string, any[]>): EmbedBuil
   embed.setTimestamp();
 
   return embed;
+}
+
+// Create dropdown menu for categories
+function createCategorySelectMenu(categorizedCommands: Map<string, any[]>): ActionRowBuilder<StringSelectMenuBuilder> {
+  const options = [];
+  
+  for (const [category, commands] of categorizedCommands) {
+    options.push(
+      new StringSelectMenuOptionBuilder()
+        .setLabel(category)
+        .setDescription(`View ${commands.length} commands in ${category}`)
+        .setValue(category.toLowerCase().replace(/\s+/g, '_'))
+    );
+  }
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('help_category_select')
+    .setPlaceholder('Select a category to view commands')
+    .addOptions(options);
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 }
 
 export default {
@@ -194,11 +212,52 @@ export default {
       });
     }
 
-    // Show all commands grouped by category
+    // Show all commands grouped by category with dropdown
     const categorized = groupCommandsByCategory(commands);
-    return interaction.reply({
+    const response = await interaction.reply({
       embeds: [createMainHelpEmbed(categorized)],
+      components: [createCategorySelectMenu(categorized)],
       ephemeral: true
+    });
+
+    // Create collector for dropdown interactions
+    const collector = response.createMessageComponentCollector({
+      componentType: ComponentType.StringSelect,
+      time: 300000 // 5 minutes
+    });
+
+    collector.on('collect', async (selectInteraction) => {
+      if (selectInteraction.user.id !== interaction.user.id) {
+        return selectInteraction.reply({
+          content: 'This menu is not for you!',
+          ephemeral: true
+        });
+      }
+
+      const selectedCategory = selectInteraction.values[0];
+      // Find the actual category name
+      let actualCategory = '';
+      for (const [cat] of categorized) {
+        if (cat.toLowerCase().replace(/\s+/g, '_') === selectedCategory) {
+          actualCategory = cat;
+          break;
+        }
+      }
+
+      if (actualCategory && categorized.has(actualCategory)) {
+        const categoryCommands = categorized.get(actualCategory)!;
+        await selectInteraction.update({
+          embeds: [createCategoryEmbed(actualCategory, categoryCommands)],
+          components: [createCategorySelectMenu(categorized)]
+        });
+      }
+    });
+
+    collector.on('end', () => {
+      // Disable the select menu after timeout
+      interaction.editReply({
+        components: []
+      }).catch(() => {});
     });
   },
 

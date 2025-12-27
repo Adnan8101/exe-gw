@@ -117,7 +117,7 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.EmbedColor)
- .setTitle(' Silent Warning Issued')
+ .setTitle(`${Emojis.TICK} Silent Warning`)
  .addFields(
  { name: 'User', value: `${targetMember.user.tag} (${targetMember.id})`, inline: true },
  { name: 'Moderator', value: `${message.author.tag}`, inline: true },

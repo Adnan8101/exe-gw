@@ -329,7 +329,8 @@ client.on('messageCreate', async (message) => {
     const aliasMap: { [key: string]: string } = {
         'm': 'messages',
         'i': 'invites',
-        'es': 'invites'
+        'es': 'invites',
+        'mute': 'timeout'
     };
 
     

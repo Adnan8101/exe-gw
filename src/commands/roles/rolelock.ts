@@ -157,9 +157,9 @@ async function handleRoleLock(message: Message, args: string[]) {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.ErrorColor)
- .setTitle(' Role Locked')
- .setDescription(`${role} is now locked and cannot be assigned by members`)
- .setFooter({ text: `Locked by ${message.author.tag}` })
+ .setTitle(`${Emojis.TICK} Role Locked`)
+ .setDescription(`${role} is now locked`)
+ .setFooter({ text: `By ${message.author.tag}` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });
@@ -193,9 +193,9 @@ async function handleRoleUnlock(message: Message, args: string[]) {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(' Role Unlocked')
- .setDescription(`${role} has been unlocked`)
- .setFooter({ text: `Unlocked by ${message.author.tag}` })
+ .setTitle(`${Emojis.TICK} Role Unlocked`)
+ .setDescription(`${role} is now unlocked`)
+ .setFooter({ text: `By ${message.author.tag}` })
  .setTimestamp();
 
  await message.reply({ embeds: [embed] });

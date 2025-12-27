@@ -2,6 +2,7 @@ import { Guild, GuildMember, User, EmbedBuilder, PermissionFlagsBits } from 'dis
 import { prisma } from './database';
 import { nanoid } from 'nanoid';
 import { Theme } from './theme';
+import { Emojis } from './emojis';
 
 export interface ModerationAction {
   action: string;
@@ -65,7 +66,7 @@ export function createModEmbed(
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(Theme.SuccessColor)
-    .setTitle(`✓ ${capitalizeFirst(action)} Successful`)
+    .setTitle(`${Emojis.TICK} ${capitalizeFirst(action)}`)
     .addFields(
       { name: 'User', value: `${target.tag}\n\`${target.id}\``, inline: true },
       { name: 'Moderator', value: moderator.tag, inline: true },

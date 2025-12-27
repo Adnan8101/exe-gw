@@ -140,7 +140,7 @@ export default {
 
  const embed = new EmbedBuilder()
  .setColor(Theme.ErrorColor)
- .setTitle(' Silent Ban')
+ .setTitle(`${Emojis.TICK} Silent Ban`)
  .addFields(
  { name: 'User', value: `${targetMember.user.tag} (${targetMember.id})`, inline: true },
  { name: 'Moderator', value: `${message.author.tag}`, inline: true },

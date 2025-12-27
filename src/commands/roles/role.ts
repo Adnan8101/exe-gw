@@ -178,9 +178,9 @@ async function handleRoleAdd(message: Message, args: string[]) {
  
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(' Role Added')
+ .setTitle(`${Emojis.TICK} Role Added`)
  .setDescription(`Added ${role} to ${targetMember.user.tag}`)
- .setFooter({ text: `Added by ${message.author.tag}` })
+ .setFooter({ text: `By ${message.author.tag}` })
  .setTimestamp();
  
  await message.reply({ embeds: [embed] });
@@ -240,9 +240,9 @@ async function handleRoleRemove(message: Message, args: string[]) {
  
  const embed = new EmbedBuilder()
  .setColor(Theme.SuccessColor)
- .setTitle(' Role Removed')
+ .setTitle(`${Emojis.TICK} Role Removed`)
  .setDescription(`Removed ${role} from ${targetMember.user.tag}`)
- .setFooter({ text: `Removed by ${message.author.tag}` })
+ .setFooter({ text: `By ${message.author.tag}` })
  .setTimestamp();
  
  await message.reply({ embeds: [embed] });
