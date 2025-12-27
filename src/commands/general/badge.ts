@@ -22,12 +22,22 @@ const BADGES: { [key: string]: { name: string; emoji: string; description: strin
         name: 'Bug Hunter',
         emoji: '<:bn_bughunter:1454433917640773726>',
         description: 'Found and reported bugs'
+    },
+    'dev': {
+        name: 'Developer',
+        emoji: '<:verifiedDeveloper:1454448916949893302>',
+        description: 'Bot developer'
+    },
+    'owner': {
+        name: 'Owner',
+        emoji: '<:owner:1454449006078857357>',
+        description: 'Bot owner'
     }
 };
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('badge')
+        .setName('bgs')
         .setDescription('View your badges or another user\'s badges')
         .addUserOption(option =>
             option.setName('user')

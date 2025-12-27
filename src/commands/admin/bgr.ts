@@ -18,7 +18,7 @@ const BADGES: { [key: string]: { name: string; emoji: string; description: strin
     'es': {
         name: 'Early Supporter',
         emoji: '<:earlysupporter:1454433945885216850>',
-        description: 'Supported the bot early stage'
+        description: 'Supported the bot early on'
     },
     'bh': {
         name: 'Bug Hunter',
@@ -39,8 +39,8 @@ const BADGES: { [key: string]: { name: string; emoji: string; description: strin
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('bga')
-        .setDescription('Add a badge to a user (Owner Only)')
+        .setName('bgr')
+        .setDescription('Remove a badge from a user (Owner Only)')
         .addStringOption(option =>
             option.setName('badge')
                 .setDescription('Badge type')
@@ -54,11 +54,7 @@ export default {
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('Target user')
-                .setRequired(true))
-        .addUserOption(option =>
-            option.setName('user')
-                .setDescription('Target user')
-                .setRequired(false)),
+                .setRequired(true)),
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (interaction.user.id !== OWNER_ID) {
@@ -71,7 +67,7 @@ export default {
         const badge = interaction.options.getString('badge', true);
         const targetUser = interaction.options.getUser('user', true);
 
-        await this.addBadge(interaction, badge, targetUser);
+        await this.removeBadge(interaction, badge, targetUser);
     },
 
     async prefixRun(message: Message, args: string[]) {
@@ -86,7 +82,7 @@ export default {
             const embed = new EmbedBuilder()
                 .setTitle(`${Emojis.CROSS} Invalid Usage`)
                 .setDescription([
-                    '**Syntax:** `!bga <badge> <user>`',
+                    '**Syntax:** `!bgr <badge> <user>`',
                     '',
                     '**Badges:**',
                     '• `es` - Early Supporter',
@@ -95,8 +91,8 @@ export default {
                     '• `owner` - Owner',
                     '',
                     '**Examples:**',
-                    '`!bga es @user`',
-                    '`!bga dev 123456789`'
+                    '`!bgr es @user`',
+                    '`!bgr bh 123456789`'
                 ].join('\n'))
                 .setColor(Theme.ErrorColor);
             return message.reply({ embeds: [embed] });
@@ -125,10 +121,10 @@ export default {
             }
         }
 
-        await this.addBadge(message, badge, targetUser);
+        await this.removeBadge(message, badge, targetUser);
     },
 
-    async addBadge(ctx: ChatInputCommandInteraction | Message, badge: string, targetUser: User | null) {
+    async removeBadge(ctx: ChatInputCommandInteraction | Message, badge: string, targetUser: User | null) {
         const isInteraction = ctx instanceof ChatInputCommandInteraction;
         const replyFn = isInteraction
             ? (content: any) => (ctx as ChatInputCommandInteraction).reply(content)
@@ -142,33 +138,28 @@ export default {
         }
 
         const badgeInfo = BADGES[badge];
-        const authorId = isInteraction ? (ctx as ChatInputCommandInteraction).user.id : (ctx as Message).author.id;
 
-        try {
-            await prisma.userBadge.create({
-                data: {
-                    userId: targetUser.id,
-                    badge: badge,
-                    addedBy: authorId
-                }
-            });
-
-            const successEmbed = new EmbedBuilder()
-                .setTitle(`${Emojis.TICK} Badge Added`)
-                .setDescription(`${badgeInfo.emoji} **${badgeInfo.name}** has been added to **${targetUser.username}**`)
-                .setColor(Theme.SuccessColor)
-                .setThumbnail(targetUser.displayAvatarURL())
-                .setTimestamp();
-
-            return replyFn({ embeds: [successEmbed] });
-        } catch (e: any) {
-            if (e.code === 'P2002') {
-                const errorEmbed = new EmbedBuilder()
-                    .setDescription(`${Emojis.CROSS} **${targetUser.username}** already has the **${badgeInfo.name}** badge.`)
-                    .setColor(Theme.ErrorColor);
-                return replyFn({ embeds: [errorEmbed] });
+        const deleted = await prisma.userBadge.deleteMany({
+            where: {
+                userId: targetUser.id,
+                badge: badge
             }
-            throw e;
+        });
+
+        if (deleted.count === 0) {
+            const errorEmbed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} **${targetUser.username}** doesn't have the **${badgeInfo.name}** badge.`)
+                .setColor(Theme.ErrorColor);
+            return replyFn({ embeds: [errorEmbed] });
         }
+
+        const successEmbed = new EmbedBuilder()
+            .setTitle(`${Emojis.TICK} Badge Removed`)
+            .setDescription(`${badgeInfo.emoji} **${badgeInfo.name}** has been removed from **${targetUser.username}**`)
+            .setColor(Theme.SuccessColor)
+            .setThumbnail(targetUser.displayAvatarURL())
+            .setTimestamp();
+
+        return replyFn({ embeds: [successEmbed] });
     }
 };

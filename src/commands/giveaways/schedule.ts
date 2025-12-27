@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, TextChannel, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits, TextChannel, AutocompleteInteraction, EmbedBuilder, Message, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, ButtonInteraction } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import * as moment from 'moment-timezone';
 import { hasGiveawayPermissions } from '../../utils/permissions';
@@ -77,7 +77,9 @@ export default {
         .addStringOption(option =>
             option.setName('custom_emoji').setDescription('Custom emoji'))
         .addUserOption(option =>
-            option.setName('birthday_user').setDescription('User to wish happy birthday to')),
+            option.setName('birthday_user').setDescription('User to wish happy birthday to'))
+        .addBooleanOption(option =>
+            option.setName('add_announcement').setDescription('Add an announcement before giveaway starts')),
 
     async autocomplete(interaction: AutocompleteInteraction) {
         const focusedValue = interaction.options.getFocused();
@@ -112,6 +114,7 @@ export default {
         const thumbnail = interaction.options.getString('thumbnail');
         const emoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
         const birthdayUser = interaction.options.getUser('birthday_user');
+        const addAnnouncement = interaction.options.getBoolean('add_announcement') || false;
 
         await this.run(interaction, channel, timeStr, timezone, winners, prize, durationStr, {
             roleReq: roleReq?.id,
@@ -122,7 +125,8 @@ export default {
             customMessage,
             thumbnail,
             emoji,
-            birthdayUser: birthdayUser?.id
+            birthdayUser: birthdayUser?.id,
+            addAnnouncement
         });
     },
 
@@ -170,18 +174,153 @@ export default {
             return await reply(msg);
         }
 
-        // JSON Payload for later execution
-        const payload = {
-            duration: durationMs, // Store duration in milliseconds
-            roleRequirement: opts.roleReq || null,
-            inviteRequirement: opts.inviteReq || 0,
-            captchaRequirement: opts.captchaReq || false,
-            winnerRole: opts.winnerRole || null,
-            assignRole: opts.assignRole || null,
-            customMessage: opts.customMessage || null,
-            thumbnail: opts.thumbnail || null,
-            emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
-            birthdayUser: opts.birthdayUser || null
+        // Check if user wants to add announcement
+        if (opts.addAnnouncement) {
+            await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
+        } else {
+            // JSON Payload for later execution
+            const payload = {
+                duration: durationMs,
+                roleRequirement: opts.roleReq || null,
+                inviteRequirement: opts.inviteReq || 0,
+                captchaRequirement: opts.captchaReq || false,
+                winnerRole: opts.winnerRole || null,
+                assignRole: opts.assignRole || null,
+                customMessage: opts.customMessage || null,
+                thumbnail: opts.thumbnail || null,
+                emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
+                birthdayUser: opts.birthdayUser || null,
+                announcement: null,
+                announcementMedia: null
+            };
+
+            await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
+        }
+    },
+
+    async handleAnnouncementInput(ctx: ChatInputCommandInteraction, channel: TextChannel, timeStr: string, timezone: string, startTimeMs: number, winners: number, prize: string, durationMs: number, opts: any) {
+        // Show prompt for announcement
+        const promptEmbed = new EmbedBuilder()
+            .setTitle('📢 Add Giveaway Announcement')
+            .setDescription([
+                'Please send your announcement message below.',
+                '',
+                '**You can include:**',
+                '• Text message',
+                '• Images (attach or paste URL)',
+                '• GIFs',
+                '',
+                '⏰ You have **5 minutes** to send your message.',
+                '',
+                '💡 *This announcement will be posted in the giveaway channel when the giveaway starts.*'
+            ].join('\n'))
+            .setColor(Theme.EmbedColor)
+            .setFooter({ text: 'Send your message now' });
+
+        await ctx.editReply({ embeds: [promptEmbed] });
+
+        // Message Collector
+        const filter = (m: Message) => m.author.id === ctx.user.id && m.channel.id === ctx.channel!.id;
+        const messageChannel = ctx.channel as TextChannel;
+        const collected = await messageChannel.awaitMessages({ filter, max: 1, time: 300000, errors: ['time'] }).catch(() => null);
+
+        if (!collected || collected.size === 0) {
+            const timeoutEmbed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} Timed out. Giveaway not scheduled.`)
+                .setColor(Theme.ErrorColor);
+            return await ctx.editReply({ embeds: [timeoutEmbed] });
+        }
+
+        const userMessage = collected.first()!;
+        const announcementText = userMessage.content || '';
+        const announcementMedia = userMessage.attachments.first()?.url || null;
+
+        // Delete user message
+        await userMessage.delete().catch(() => {});
+
+        // Show Preview
+        const previewEmbed = new EmbedBuilder()
+            .setTitle('👀 Announcement Preview')
+            .setDescription(announcementText || '*No text*')
+            .setColor(Theme.EmbedColor)
+            .setFooter({ text: 'This will be posted when the giveaway starts' });
+
+        if (announcementMedia) {
+            previewEmbed.setImage(announcementMedia);
+        }
+
+        const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('save_announcement')
+                    .setLabel('Save & Schedule')
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('💾'),
+                new ButtonBuilder()
+                    .setCustomId('edit_announcement')
+                    .setLabel('Edit')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('✏️'),
+                new ButtonBuilder()
+                    .setCustomId('cancel_announcement')
+                    .setLabel('Cancel')
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji('❌')
+            );
+
+        const previewMsg = await ctx.editReply({ embeds: [previewEmbed], components: [row] });
+
+        // Button Collector
+        try {
+            const selection = await previewMsg.awaitMessageComponent({ 
+                filter: (btn) => btn.user.id === ctx.user.id, 
+                time: 60000,
+                componentType: ComponentType.Button
+            });
+
+            if (selection.customId === 'save_announcement') {
+                const payload = {
+                    duration: durationMs,
+                    roleRequirement: opts.roleReq || null,
+                    inviteRequirement: opts.inviteReq || 0,
+                    captchaRequirement: opts.captchaReq || false,
+                    winnerRole: opts.winnerRole || null,
+                    assignRole: opts.assignRole || null,
+                    customMessage: opts.customMessage || null,
+                    thumbnail: opts.thumbnail || null,
+                    emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
+                    birthdayUser: opts.birthdayUser || null,
+                    announcement: announcementText,
+                    announcementMedia: announcementMedia
+                };
+
+                await selection.deferUpdate();
+                await this.saveScheduledGiveaway(selection, channel, startTimeMs, winners, prize, timezone, payload);
+            } else if (selection.customId === 'edit_announcement') {
+                await selection.update({ content: '', embeds: [], components: [] });
+                // Retry
+                await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
+            } else {
+                const cancelEmbed = new EmbedBuilder()
+                    .setDescription(`${Emojis.CROSS} Giveaway scheduling cancelled.`)
+                    .setColor(Theme.ErrorColor);
+                await selection.update({ embeds: [cancelEmbed], components: [] });
+            }
+        } catch (e) {
+            const timeoutEmbed = new EmbedBuilder()
+                .setDescription(`${Emojis.CROSS} Timed out. Giveaway not scheduled.`)
+                .setColor(Theme.ErrorColor);
+            await ctx.editReply({ embeds: [timeoutEmbed], components: [] });
+        }
+    },
+
+    async saveScheduledGiveaway(ctx: any, channel: TextChannel, startTimeMs: number, winners: number, prize: string, timezone: string, payload: any) {
+        const reply = async (msg: any) => {
+            if (ctx.deferred || ctx.replied) {
+                return await ctx.editReply(msg);
+            } else {
+                return await ctx.reply(msg);
+            }
         };
 
         try {
@@ -192,15 +331,26 @@ export default {
                     hostId: ctx.user ? ctx.user.id : ctx.author.id,
                     prize: prize,
                     winnersCount: winners,
-                    startTime: toBigInt(startTimeMs), // Use UTC timestamp
+                    startTime: toBigInt(startTimeMs),
                     payload: JSON.stringify(payload)
                 }
             });
 
             const timestamp = Math.floor(startTimeMs / 1000);
-            const msg = { content: `${Emojis.TICK} Giveaway scheduled for <t:${timestamp}:F> (<t:${timestamp}:R>) in ${channel}!\n**Prize:** ${prize}\n**Timezone:** ${timezone}`, ephemeral: true };
+            const successEmbed = new EmbedBuilder()
+                .setTitle(`${Emojis.TICK} Giveaway Scheduled!`)
+                .setDescription([
+                    `**Prize:** ${prize}`,
+                    `**Winners:** ${winners}`,
+                    `**Channel:** ${channel}`,
+                    `**Start Time:** <t:${timestamp}:F> (<t:${timestamp}:R>)`,
+                    `**Timezone:** ${timezone}`,
+                    payload.announcement ? '\n📢 *Announcement will be posted*' : ''
+                ].join('\n'))
+                .setColor(Theme.SuccessColor)
+                .setTimestamp();
 
-            await reply(msg);
+            await reply({ embeds: [successEmbed], components: [] });
 
         } catch (error) {
             console.error(error);

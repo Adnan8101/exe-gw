@@ -280,7 +280,7 @@ client.on('messageCreate', async (message) => {
     if (!command) return;
 
     // Define public commands (no permission check)
-    const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting', 'badge'];
+    const publicCommands = ['messages', 'invites', 'vc', 'ping', 'stats', 'help', 'leaderboard', 'about', 'invite', 'gping', 'gstats', 'ghelp', 'ginvite', 'gabout', 'bsetting', 'badge', 'bgs'];
     const isPublicCommand = publicCommands.includes(actualCommandName);
 
     // Only run if command supports prefixRun
