@@ -36,8 +36,7 @@ export function showCommandHelp(message: Message, commandData: CommandData) {
 export function createMissingArgsEmbed(commandData: CommandData, missingArg: string) {
   const embed = new EmbedBuilder()
     .setColor(Theme.ErrorColor)
-    .setTitle(`${Emojis.CROSS} Missing Required Argument`)
-    .setDescription(`You need to provide: **${missingArg}**`);
+    .setDescription(`${Emojis.CROSS} You need to provide: **${missingArg}**`);
 
   if (commandData.metadata) {
     embed.addFields(
