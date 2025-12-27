@@ -70,6 +70,11 @@ const PAGES = [
                 inline: false
             },
             { 
+                name: 'Channel Management', 
+                value: '`/ignore_channel add <#channel>`\nIgnore non-giveaway commands in channel\n\n`/ignore_channel remove <#channel>`\nStop ignoring channel\n\n`/ignore_channel show`\nView all ignored channels',
+                inline: false
+            },
+            { 
                 name: 'Channel Blacklist', 
                 value: '`/blacklist add <message|voice> <#channel>`\nStop tracking in specific channels\n\n`/blacklist remove <message|voice> <#channel>`\nResume tracking in channels\n\n`/blacklist show [type]`\nView all blacklisted channels',
                 inline: false

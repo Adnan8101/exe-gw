@@ -141,3 +141,12 @@ model UserBadge {
 
   @@unique([userId, badge])
 }
+
+model IgnoredChannel {
+  id        Int      @id @default(autoincrement())
+  guildId   String
+  channelId String
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, channelId])
+}

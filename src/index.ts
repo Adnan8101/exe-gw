@@ -128,6 +128,31 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
+        // Check if channel is ignored (except for giveaway commands)
+        if (interaction.channelId && interaction.guildId) {
+            const isGiveawayCommand = interaction.commandName.startsWith('g') && 
+                ['gstart', 'gcreate', 'gend', 'gcancel', 'gstop', 'gresume', 'greroll', 'gdelete', 'glist', 'ghistory', 'grefresh', 'gschedule'].includes(interaction.commandName);
+            
+            if (!isGiveawayCommand) {
+                try {
+                    const isIgnored = await prisma.ignoredChannel.findUnique({
+                        where: {
+                            guildId_channelId: {
+                                guildId: interaction.guildId,
+                                channelId: interaction.channelId
+                            }
+                        }
+                    });
+
+                    if (isIgnored) {
+                        return; // Silently ignore the command
+                    }
+                } catch (error) {
+                    console.error('Error checking ignored channel:', error);
+                }
+            }
+        }
+
         const command = commands.get(interaction.commandName);
 
         if (!command) {
