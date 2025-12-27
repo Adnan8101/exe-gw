@@ -276,17 +276,15 @@ export class SchedulerService {
                     
                     if (channel && payload.announcement) {
                         try {
-                            const { EmbedBuilder } = await import('discord.js');
-                            const announcementEmbed = new EmbedBuilder()
-                                .setDescription(payload.announcement)
-                                .setColor('#FFD700')
-                                .setTimestamp();
+                            const messageContent: any = {
+                                content: payload.announcement
+                            };
 
                             if (payload.announcementMedia) {
-                                announcementEmbed.setImage(payload.announcementMedia);
+                                messageContent.content += `\n${payload.announcementMedia}`;
                             }
 
-                            await channel.send({ embeds: [announcementEmbed] });
+                            await channel.send(messageContent);
                             console.log(`[Scheduler] Announcement sent for scheduled giveaway ${scheduled.id}`);
                         } catch (err) {
                             console.error(`[Scheduler] Failed to send announcement for ${scheduled.id}:`, err);
