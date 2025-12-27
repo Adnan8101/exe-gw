@@ -120,9 +120,6 @@ export default {
         const announcement = interaction.options.getString('announcement');
         const announcementMedia = interaction.options.getString('announcement_media');
 
-        
-        const addAnnouncementInteractive = !announcement && !announcementMedia;
-
         await this.run(interaction, channel, timeStr, timezone, winners, prize, durationStr, {
             roleReq: roleReq?.id,
             inviteReq,
@@ -134,8 +131,7 @@ export default {
             emoji,
             birthdayUser: birthdayUser?.id,
             announcement,
-            announcementMedia,
-            addAnnouncementInteractive
+            announcementMedia
         });
     },
 
@@ -184,8 +180,8 @@ export default {
         }
 
         
-        if (opts.addAnnouncementInteractive) {
-            await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
+        if (!opts.announcement && !opts.announcementMedia) {
+            await this.promptForAnnouncement(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
         } else {
             
             const payload = {
@@ -201,6 +197,87 @@ export default {
                 birthdayUser: opts.birthdayUser || null,
                 announcement: opts.announcement || null,
                 announcementMedia: opts.announcementMedia || null
+            };
+
+            await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
+        }
+    },
+
+    async promptForAnnouncement(ctx: ChatInputCommandInteraction, channel: TextChannel, timeStr: string, timezone: string, startTimeMs: number, winners: number, prize: string, durationMs: number, opts: any) {
+        const promptEmbed = new EmbedBuilder()
+            .setTitle('📢 Add Giveaway Announcement?')
+            .setDescription([
+                'Would you like to add an announcement message that will be posted when the giveaway starts?',
+                '',
+                '**Announcements can include:**',
+                '• Text message',
+                '• Images or GIFs',
+                '',
+                '💡 *Choose below to continue*'
+            ].join('\n'))
+            .setColor(Theme.EmbedColor);
+
+        const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('add_announcement')
+                    .setLabel('Yes, Add Announcement')
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('📢'),
+                new ButtonBuilder()
+                    .setCustomId('skip_announcement')
+                    .setLabel('No, Skip')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('⏭️')
+            );
+
+        const promptMsg = await ctx.editReply({ embeds: [promptEmbed], components: [row] });
+
+        try {
+            const selection = await promptMsg.awaitMessageComponent({ 
+                filter: (btn) => btn.user.id === ctx.user.id, 
+                time: 60000,
+                componentType: ComponentType.Button
+            });
+
+            if (selection.customId === 'add_announcement') {
+                await selection.update({ content: '', embeds: [], components: [] });
+                await this.handleAnnouncementInput(ctx, channel, timeStr, timezone, startTimeMs, winners, prize, durationMs, opts);
+            } else {
+                
+                const payload = {
+                    duration: durationMs,
+                    roleRequirement: opts.roleReq || null,
+                    inviteRequirement: opts.inviteReq || 0,
+                    captchaRequirement: opts.captchaReq || false,
+                    winnerRole: opts.winnerRole || null,
+                    assignRole: opts.assignRole || null,
+                    customMessage: opts.customMessage || null,
+                    thumbnail: opts.thumbnail || null,
+                    emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
+                    birthdayUser: opts.birthdayUser || null,
+                    announcement: null,
+                    announcementMedia: null
+                };
+
+                await selection.deferUpdate();
+                await this.saveScheduledGiveaway(selection, channel, startTimeMs, winners, prize, timezone, payload);
+            }
+        } catch (e) {
+            
+            const payload = {
+                duration: durationMs,
+                roleRequirement: opts.roleReq || null,
+                inviteRequirement: opts.inviteReq || 0,
+                captchaRequirement: opts.captchaReq || false,
+                winnerRole: opts.winnerRole || null,
+                assignRole: opts.assignRole || null,
+                customMessage: opts.customMessage || null,
+                thumbnail: opts.thumbnail || null,
+                emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
+                birthdayUser: opts.birthdayUser || null,
+                announcement: null,
+                announcementMedia: null
             };
 
             await this.saveScheduledGiveaway(ctx, channel, startTimeMs, winners, prize, timezone, payload);
