@@ -82,9 +82,7 @@ export default {
         .addStringOption(option =>
             option.setName('thumbnail').setDescription('Thumbnail URL'))
         .addStringOption(option =>
-            option.setName('custom_emoji').setDescription('Custom emoji'))
-        .addUserOption(option =>
-            option.setName('birthday_user').setDescription('User to wish happy birthday to')),
+            option.setName('custom_emoji').setDescription('Custom emoji')),
 
     async autocomplete(interaction: AutocompleteInteraction) {
         const focusedValue = interaction.options.getFocused();
@@ -118,7 +116,6 @@ export default {
         const customMessage = interaction.options.getString('custom_message');
         const thumbnail = interaction.options.getString('thumbnail');
         const emoji = interaction.options.getString('custom_emoji') || "<a:Exe_Gw:1454033571273506929>";
-        const birthdayUser = interaction.options.getUser('birthday_user');
         const announce = interaction.options.getBoolean('announce') || false;
         const announcement = interaction.options.getString('announcement');
         const announcementMedia = interaction.options.getString('announcement_media');
@@ -132,7 +129,6 @@ export default {
             customMessage,
             thumbnail,
             emoji,
-            birthdayUser: birthdayUser?.id,
             announce,
             announcement,
             announcementMedia
@@ -198,7 +194,6 @@ export default {
                 customMessage: opts.customMessage || null,
                 thumbnail: opts.thumbnail || null,
                 emoji: opts.emoji || "<a:Exe_Gw:1454033571273506929>",
-                birthdayUser: opts.birthdayUser || null,
                 announcement: opts.announce ? (opts.announcement || null) : null,
                 announcementMedia: opts.announce ? (opts.announcementMedia || null) : null
             };
