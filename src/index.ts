@@ -75,10 +75,18 @@ client.once('ready', async () => {
     
     const data = commands.map(c => c.data.toJSON());
     try {
+        console.log(`Registering ${data.length} commands globally...`);
         await client.application?.commands.set(data);
-        console.log(`Successfully registered ${data.length} commands globally.`);
+        console.log(`✅ Successfully registered ${data.length} commands globally.`);
+        
+        // Log details of critical commands for verification
+        const gschedule = commands.get('gschedule');
+        if (gschedule) {
+            const options = gschedule.data.options;
+            console.log(`✅ /gschedule command has ${options.length} options`);
+        }
     } catch (error) {
-        console.error("Error registering commands:", error);
+        console.error("❌ Error registering commands:", error);
     }
 
     
